@@ -2,6 +2,9 @@ node_modules/
 dist/
 *.tsbuildinfo
 
+# згенеровані резюме
+out/
+
 # службові файли застосунку
 skills.csv.bak
 skills.csv.tmp
