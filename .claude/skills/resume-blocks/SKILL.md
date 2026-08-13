@@ -25,8 +25,9 @@ Flags: `--json`, `--limit=<n>`, `--min/--max=<n>`, `--grep=<text>`, `--csv=<path
 | verdict | meaning |
 | --- | --- |
 | `use freely` | rating 4–5 |
-| `hedged mention only` | rating 3 |
-| `NEVER claim` | rating 0–2 |
+| `plain in skills block, hedged in prose` | rating 3 |
+| `skills block only, last on its line` | rating 2, and only if the vacancy asks for it |
+| `NEVER claim` | rating 0–1 |
 | `NEVER claim (no rating yet)` | in the base, still unrated |
 | `NOT IN BASE` | no such row — unknown skill |
 | `ambiguous` | the matcher is unsure; read the candidate list and decide yourself |
@@ -47,9 +48,12 @@ do not edit the file.
    wording before treating it as unknown.
 4. **Write the Title, then the Summary, then the Skills block**, using only what survived the
    gates below.
-5. **Self-check**: `rate` every technical term in the Title and Summary, and run `check` on the
-   Skills block. Anything under 3, unrated, or not in the base must be cut; anything `check`
-   reports as MISSING must be added. Then output.
+5. **Self-check**: `rate` every meaningful noun phrase in the Title and Summary — not just the
+   obvious technologies, but also practice areas, scale words and product descriptors
+   (`heavy data pipelines`, `high-traffic`, `multi-tenant`). Anything under 3, unrated, or not in
+   the base must be cut; a phrase that maps nowhere is borrowed from the posting, so cut it too.
+   Then read the Summary once against the portability test below. Run `check` on the Skills block
+   and add whatever it reports as MISSING. Then output.
 
 ## Rating gates
 
@@ -111,6 +115,45 @@ Rules:
 - No invented numbers: years of experience, team sizes, `%` improvements only if the user gave them.
 - Do not repeat the same keyword in every sentence; the Title already carries the role words once.
 
+### A profile, not a job description
+
+The strongest pull of this task is to echo the posting back. Resist it: the Summary describes the
+engineer, and it is read next to every other application, so wording that only makes sense for
+this one employer makes it look copy-pasted.
+
+- **Portability test.** Every sentence must still be true and natural if the same person applied
+  to a different company with the same role. `Experienced in building heavy data pipelines for
+  logistics forecasting` fails it. `Experienced in backend architecture and API design` passes.
+- **The base is the vocabulary.** A noun phrase belongs in the Summary only if it maps to a
+  `skills.csv` row that clears the gate (4–5 plain, 3 hedged). Everything else is either plain
+  English glue (`building`, `scalable`, `experienced in`) or borrowed from the posting — cut it.
+  Verify by `rate`-ing the phrase: `heavy data pipelines` → `Data Pipelines (1)` → it does not go
+  in, and there is nothing to soften it into.
+- **Never carry over the employer's work items**: internal system names, business processes and
+  domain tasks — `claims processing`, `real-time bidding`, `matching engine`, `heavy data
+  pipelines`, `driver dispatch`. These belong in a cover letter or in bullet points about past
+  projects, never in the Summary.
+- **Generalise instead of borrowing.** A task phrase often has a legitimate skill inside it: keep
+  the skill in the base's neutral wording, drop the employer-specific half. `real-time driver
+  dispatch` → `Real-time Systems (4)` → write `real-time systems`. `multi-tenant billing` →
+  `Multi-tenant Systems (1)` → nothing survives, so write nothing at all.
+- **Product context is one neutral phrase**, six words at most, about the *class* of product
+  (scale, audience, delivery model) — not about the employer's business problem. `for global
+  products`, `for high-traffic consumer platforms`, `for B2B SaaS products`. Even this needs
+  backing: use a scale/model word only when its row clears the gate (`High-load Systems`,
+  `SaaS`, `B2B`). When nothing backs it, `for global products` is the safe default. Drop the
+  industry entirely if the domain row rates below 3.
+- **Do not borrow the posting's intensity adjectives** (`heavy`, `massive`, `mission-critical`,
+  `hyper-scale`) — they are claims about scale, and they need a rating behind them just like a
+  technology does.
+
+Same vacancy, both grounded in the same ratings:
+
+- Borrowed: `Senior Backend Engineer building heavy data pipelines and real-time driver dispatch
+  for a logistics marketplace, working on mission-critical forecasting workloads.`
+- Portable: `Senior Backend Engineer specializing in Node.js, NestJS and PostgreSQL, building
+  distributed, event-driven services for global products.`
+
 Reference (this is the target register):
 
 > Senior Frontend Engineer specializing in React, Next.js and TypeScript, building scalable,
@@ -151,21 +194,26 @@ That is an illustration of the shape, not a fixed taxonomy.
 ### What goes in — the completeness rule
 
 **Every** term the vacancy mentions as a requirement, tech stack item, nice-to-have or
-responsibility that exists in `skills.csv` with a rating **above 2** must appear somewhere in the
-block. No omissions — this block is where recall matters more than elegance. Run `check` to prove
-it: whatever it lists under MISSING has to be added before you output.
+responsibility that exists in `skills.csv` with a rating of **3 or more** must appear somewhere in
+the block. No omissions — this block is where recall matters more than elegance. Run `check` to
+prove it: whatever it lists under MISSING has to be added before you output.
+
+Vacancy terms rated **2** belong here too, but only at the end of their line — the keyword gets
+covered for the ATS without the resume claiming strength that is not there. `check` lists them
+under OPTIONAL; adding them is the default, skipping one is a deliberate choice.
 
 After that coverage is complete, top the lines up with strong skills that the vacancy does *not*
-mention but that show real depth — rating 5 first, then 4. Never pad with rating-3 items that the
-vacancy did not ask for, and keep the additions to roughly a third of each line so the vacancy's
-own keywords stay dominant.
+mention but that show real depth — rating 5 first, then 4. Never pad with rating-3 or rating-2
+items the vacancy did not ask for, and keep the additions to roughly a third of each line so the
+vacancy's own keywords stay dominant.
 
 ### Order inside a line
 
 1. vacancy-required, rating 5–4 — in the vacancy's own order of importance;
 2. vacancy-required, rating 3;
 3. not in the vacancy, rating 5;
-4. not in the vacancy, rating 4.
+4. not in the vacancy, rating 4;
+5. vacancy-required, rating 2 — always last, after everything above.
 
 ### Formatting
 
@@ -190,5 +238,7 @@ own keywords stay dominant.
 Then, briefly:
 
 - which strong skills you added beyond what the vacancy asked for;
-- which vacancy requirements you deliberately left out because they rate ≤2 / are missing from
-  the base (this is the honest gap list the user needs before applying).
+- which vacancy requirements you deliberately left out because they rate ≤1 / are missing from
+  the base (this is the honest gap list the user needs before applying);
+- which requirements are in the block only as rating-2 tail items, so the user knows where the
+  interview will press.
