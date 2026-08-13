@@ -5,3 +5,5 @@ dist/
 # службові файли застосунку
 skills.csv.bak
 skills.csv.tmp
+
+.DS_Store
