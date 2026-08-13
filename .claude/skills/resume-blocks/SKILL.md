@@ -235,6 +235,10 @@ vacancy's own keywords stay dominant.
 <category lines>
 ```
 
+This skill ends with the blocks. Putting them into a resume file is a separate system —
+the `resume-render` skill copies `CV_Base.html` and fills its placeholders. Never edit
+`CV_Base.html` from here.
+
 Then, briefly:
 
 - which strong skills you added beyond what the vacancy asked for;

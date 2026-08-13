@@ -72,3 +72,39 @@ node .claude/skills/resume-blocks/skills.mjs check draft.txt "React" "Kubernetes
 якщо є до чого причепитись.
 
 Скіл `skills.csv` не змінює — тільки читає.
+
+## Складання резюме під вакансію
+
+`.claude/skills/resume-render/` — окрема система: нічого не пише сама, лише вставляє готові блоки
+в копію `CV_Base.html` замість плейсхолдерів `[Position placeholder]`, `[Summary placeholder]`,
+`[skills placeholder]`. Решта резюме (контакти, досвід, освіта, open source) копіюється як є.
+
+```bash
+node .claude/skills/resume-render/render.mjs blocks.md --company="Acme"
+node .claude/skills/resume-render/render.mjs blocks.md --out=cv.html   # "-" = у stdout
+node .claude/skills/resume-render/render.mjs placeholders              # що оголошує база
+```
+
+`blocks.md` — вивід скіла `resume-blocks` як є (секції `Title`, `Summary`, `Skills`; коментарі
+після блоку скілів ігноруються). Результат — `out/CV_<компанія>_<посада>.html`; перезапис лише
+з `--force`.
+
+`CV_Base.html` скрипт лише читає — базове резюме редагує тільки користувач.
+
+## PDF однією довгою сторінкою
+
+`.claude/skills/resume-pdf/` — ще одна окрема система: html → pdf, де висота паперу дорівнює
+висоті контенту, тож у файлі рівно одна сторінка й жодного розриву посеред тексту.
+
+```bash
+node .claude/skills/resume-pdf/topdf.mjs out/CV_Acme.html      # → out/CV_Acme.pdf
+node .claude/skills/resume-pdf/topdf.mjs cv.html --pad=12      # нижній відступ, мм
+node .claude/skills/resume-pdf/topdf.mjs browsers              # який Chromium буде використано
+```
+
+Прапорці: `--out=`, `--width=` (мм, типово 210), `--pad=` (мм, типово 8), `--scale=`,
+`--browser=` (або `CHROME_PATH`), `--force`.
+
+Залежностей немає: скрипт керує headless-Chromium по DevTools-протоколу через вбудований у Node
+`WebSocket`. Браузер шукає сам — кеш Playwright/Puppeteer, потім Chrome, Chromium, Edge, Brave,
+Arc. Після друку рахує сторінки в готовому PDF і падає з помилкою, якщо їх більше однієї.
