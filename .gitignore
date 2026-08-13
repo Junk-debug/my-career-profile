@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# службові файли застосунку
+skills.csv.bak
+skills.csv.tmp
