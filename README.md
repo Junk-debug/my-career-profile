@@ -47,3 +47,26 @@ npm run dev   # → http://localhost:5173
 ```bash
 SKILLS_CSV=/tmp/test.csv npm run dev
 ```
+
+## Блоки резюме під вакансію
+
+`.claude/skills/resume-blocks/` — скіл для агента: генерація блоків Title, Summary і Skills
+під конкретну вакансію на основі оцінок зі `skills.csv`.
+
+- `SKILL.md` — правила: як чистити заголовок вакансії, як будувати summary, як групувати блок
+  скілів і в якому порядку, які оцінки дозволяють згадувати скіл (4–5 вільно, 3 в прозі лише
+  з хеджем, решта — ніколи).
+- `skills.mjs` — довідник по базі. Вакансію аналізує агент; скрипт лише відповідає, яка
+  оцінка в терміна, чи є він у базі і чи все потрібне потрапило в блок скілів:
+
+```bash
+node .claude/skills/resume-blocks/skills.mjs rate "React" "Next.js" "Rust"
+node .claude/skills/resume-blocks/skills.mjs search "state management"
+node .claude/skills/resume-blocks/skills.mjs list --min=4 --grep=test
+node .claude/skills/resume-blocks/skills.mjs check draft.txt "React" "Kubernetes"
+```
+
+`check` бере чернетку блоку скілів і терміни вакансії й показує, що забуто (оцінка ≥3, але
+немає в блоці) і що просочилось (оцінка ≤2). Код виходу 1, якщо є до чого причепитись.
+
+Скіл `skills.csv` не змінює — тільки читає.
