@@ -53,7 +53,11 @@ do not edit the file.
    (`heavy data pipelines`, `high-traffic`, `multi-tenant`). Anything under 3, unrated, or not in
    the base must be cut; a phrase that maps nowhere is borrowed from the posting, so cut it too.
    Then read the Summary once against the portability test below. Run `check` on the Skills block
-   and add whatever it reports as MISSING. Then output.
+   and add whatever it reports as MISSING.
+6. **Check what the gates deleted**, which `check` cannot see: compare the posting's minimum years
+   against the count and open sentence 1 with it if it clears; then walk the requirements you
+   dropped for rating ≤1 and ask, per requirement, whether a category substitute or a language
+   foundation belongs in the block instead. Then output.
 
 ## Rating gates
 
@@ -112,8 +116,23 @@ Rules:
 - 8–12 technology keywords in total — beyond that it reads as keyword stuffing and dilutes ATS
   scoring per keyword.
 - No first person, no `I`, no `passionate/results-driven/team player`.
-- No invented numbers: years of experience, team sizes, `%` improvements only if the user gave them.
+- No invented numbers: team sizes and `%` improvements only if the user gave them. Years of
+  experience are a verified fact — see below — not an invented number.
 - Do not repeat the same keyword in every sentence; the Title already carries the role words once.
+
+### Years of experience
+
+Commercial software development has a start year — read it from the base CV.
+Derive the number from the current year — never write a hardcoded `4+`, it goes stale.
+
+Lead sentence 1 with it **only when the posting's minimum is at or below** what that yields
+(`Software Engineer with N+ years of experience specializing in …`). It is the cheapest way to
+clear an ATS year-filter and a recruiter's first scan.
+
+When the posting asks for **more** years than the count, say nothing about the number at all — do not
+hedge it, do not round up, do not write `several years`. Silence is correct there; the dates in
+EXPERIENCE let the reader do the arithmetic. Report the gap to the user instead, so they know
+before applying.
 
 ### A profile, not a job description
 
@@ -207,6 +226,36 @@ mention but that show real depth — rating 5 first, then 4. Never pad with rati
 items the vacancy did not ask for, and keep the additions to roughly a third of each line so the
 vacancy's own keywords stay dominant.
 
+### Two things the gates must never delete
+
+The gates cut individual terms. Applied literally they also cut two things the resume cannot
+afford to lose — check both before you output.
+
+**Cover the category, not just the term.** When a vacancy asks for a *kind* of technology and the
+specific product it names rates ≤1, the requirement is still live: put in whatever the base does
+have in that category at rating ≥3. Dropping the named tool is honest; dropping the whole category
+just hands back a requirement that could have been met.
+
+| vacancy names | rates | what still goes in |
+| --- | --- | --- |
+| Azure / AWS (cloud) | 1 | `GCP` (3), `Docker`, `Cloud-native`, `CI/CD` |
+| Kubernetes (orchestration) | 1 | `Docker`, `Docker Compose` |
+| Celery (background work) | 0 | `Background Jobs` (4), `Message Queues` (4), `Redis` |
+| PrimeReact (component library) | 1 | `Material UI / MUI` (5), `Component Libraries` |
+| SQLAlchemy (ORM) | 0 | `Prisma ORM` (5), `TypeORM`, `Sequelize` |
+
+The substitute is never presented as the thing they asked for — it is simply the neighbouring
+skill on its line. A cloud line reading `GCP, Docker, CI/CD, Cloud-native` answers "do they ship
+to a cloud?" without ever claiming Azure. If the base has nothing at all in the category, that is
+a real gap: report it to the user.
+
+**Keep the foundation under a named framework.** A framework in the block implies its language,
+and ATS filters frequently scan for the language rather than the framework. Whenever a
+vacancy-required technology sits on top of something rated ≥4 in the base, that foundation stays
+in the block even if the posting never spells it out: React/Next.js/Vue → `JavaScript`;
+NestJS/Express → `Node.js`; FastAPI/Flask/Django → `Python`; PostgreSQL/MySQL → `SQL`; any ORM →
+`SQL`. These are cheap, true, and the first thing a keyword filter looks for.
+
 ### Order inside a line
 
 1. vacancy-required, rating 5–4 — in the vacancy's own order of importance;
@@ -243,6 +292,8 @@ Then, briefly:
 
 - which strong skills you added beyond what the vacancy asked for;
 - which vacancy requirements you deliberately left out because they rate ≤1 / are missing from
-  the base (this is the honest gap list the user needs before applying);
+  the base (this is the honest gap list the user needs before applying), and for each one whether
+  a category substitute covered it or the category went uncovered entirely;
+- whether the posting's minimum years is cleared, and by how much it is missed if not;
 - which requirements are in the block only as rating-2 tail items, so the user knows where the
   interview will press.
