@@ -20,12 +20,19 @@ making a PDF.
 node .claude/skills/resume-pdf/topdf.mjs out/CV_Acme.html            # → out/CV_Acme.pdf
 node .claude/skills/resume-pdf/topdf.mjs cv.html --out=resume.pdf    # explicit path
 node .claude/skills/resume-pdf/topdf.mjs cv.html --width=210 --pad=8 # page width, bottom pad (mm)
+node .claude/skills/resume-pdf/topdf.mjs cv.html --side=14           # left/right margins (mm)
 node .claude/skills/resume-pdf/topdf.mjs cv.html --scale=0.95        # shrink the content
 node .claude/skills/resume-pdf/topdf.mjs browsers                    # which Chromium it will use
 ```
 
 Flags: `--browser=<path>` (or `CHROME_PATH`), `--force` to overwrite an existing PDF.
 Defaults: A4 width (210 mm), 8 mm of bottom padding, scale 1.
+
+Side margins are not the script's — they come from the HTML itself (the Google Docs export gives
+`CV_Base.html` a body with `padding: 9pt 57.6pt`, i.e. 20.3 mm each side, plus a `max-width`).
+`--side` overrides both at print time, in the browser, leaving the file untouched; without the
+flag the PDF keeps whatever the HTML says. Changing the margins reflows the text, so the page
+gets shorter — that is measured after the override, so the single-page guarantee still holds.
 
 No npm dependencies — the script drives Chromium over the DevTools protocol using Node's built-in
 `WebSocket`. It needs some Chromium on the machine and finds one itself: a Playwright/Puppeteer

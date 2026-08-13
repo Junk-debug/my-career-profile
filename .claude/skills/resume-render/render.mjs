@@ -28,10 +28,12 @@ const PLACEHOLDERS = {
   skills: '[skills placeholder]',
 };
 
-/** Класи Google Docs у базі: c1 — жирний, c0 — звичайний, c9 — абзац рядка скілів. */
-const BOLD = 'c1';
+/** Класи Google Docs у базі: c7 c4 — жирний 10.5pt, c0 — звичайний, c14 — абзац рядка скілів.
+ *  Google Docs перенумеровує їх при кожному повторному експорті — після заміни
+ *  CV_Base.html звіряй ці три значення з новим CSS. */
+const BOLD = 'c7 c4';
 const PLAIN = 'c0';
-const LINE = 'c9';
+const LINE = 'c14';
 
 // ─────────────────────────────────────────── розбір блоків
 

@@ -166,7 +166,15 @@ function countPages(buffer) {
 
 // ─────────────────────────────────────────── власне рендер
 
-async function renderPdf(htmlPath, { binary, widthMm, padMm, scale }) {
+/**
+ * Бокові поля живуть у самому html (експорт Google Docs дає body з padding 57.6pt
+ * і max-width 480.1pt). --side переписує їх на час друку, не чіпаючи файл:
+ * знімаємо max-width, інакше колонка тексту лишиться завширшки як була.
+ */
+const sideStyle = (sideMm) => `body{max-width:none !important;`
+  + `padding-left:${sideMm}mm !important;padding-right:${sideMm}mm !important}`;
+
+async function renderPdf(htmlPath, { binary, widthMm, padMm, scale, sideMm }) {
   const profileDir = mkdtempSync(join(tmpdir(), 'resume-pdf-'));
   const { child, wsUrl } = launch(binary, profileDir);
   let cdp;
@@ -187,6 +195,16 @@ async function renderPdf(htmlPath, { binary, widthMm, padMm, scale }) {
     const loaded = cdp.once('Page.loadEventFired', sessionId);
     await page('Page.navigate', { url: pathToFileURL(htmlPath).href });
     await loaded;
+
+    if (sideMm !== null) {
+      await page('Runtime.evaluate', {
+        expression: `(() => {
+          const style = document.createElement('style');
+          style.textContent = ${JSON.stringify(sideStyle(sideMm))};
+          document.head.appendChild(style);
+        })()`,
+      });
+    }
 
     const measured = await page('Runtime.evaluate', {
       expression: `(async () => {
@@ -236,6 +254,7 @@ const USAGE = `Використання:
   node topdf.mjs out/CV_Acme.html             html → pdf поруч із ним, одна довга сторінка
   node topdf.mjs cv.html --out=resume.pdf     свій шлях
   node topdf.mjs cv.html --width=210 --pad=8  ширина сторінки й нижній відступ, мм
+  node topdf.mjs cv.html --side=14            бокові поля, мм (типово — як у html)
   node topdf.mjs cv.html --scale=0.95         масштаб контенту
   node topdf.mjs browsers                     який Chromium буде використано
 Прапорці: --browser=<шлях> (або CHROME_PATH) --force`;
@@ -274,6 +293,7 @@ async function main(argv) {
     widthMm: Number(flags.get('width') ?? WIDTH_MM),
     padMm: Number(flags.get('pad') ?? PAD_MM),
     scale: Number(flags.get('scale') ?? 1),
+    sideMm: flags.has('side') ? Number(flags.get('side')) : null,
   });
 
   writeFileSync(target, buffer);

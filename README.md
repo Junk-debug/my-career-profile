@@ -98,12 +98,17 @@ node .claude/skills/resume-render/render.mjs placeholders              # що о
 
 ```bash
 node .claude/skills/resume-pdf/topdf.mjs out/CV_Acme.html      # → out/CV_Acme.pdf
-node .claude/skills/resume-pdf/topdf.mjs cv.html --pad=12      # нижній відступ, мм
+node .claude/skills/resume-pdf/topdf.mjs cv.html --side=14      # бокові поля, мм
 node .claude/skills/resume-pdf/topdf.mjs browsers              # який Chromium буде використано
 ```
 
-Прапорці: `--out=`, `--width=` (мм, типово 210), `--pad=` (мм, типово 8), `--scale=`,
-`--browser=` (або `CHROME_PATH`), `--force`.
+Прапорці: `--out=`, `--width=` (мм, типово 210), `--pad=` (нижній відступ, мм, типово 8),
+`--side=` (бокові поля, мм), `--scale=`, `--browser=` (або `CHROME_PATH`), `--force`.
+
+Бокові поля задає сам html: експорт Google Docs дає `body` з `padding: 9pt 57.6pt` (20.3 мм
+з боків) і `max-width: 480.1pt`. `--side` перекриває це вже в браузері, під час друку — файл
+лишається недоторканим. Текст при цьому перетікає, тож сторінка стає коротшою; висота міряється
+після підміни, тому одна сторінка гарантована й далі.
 
 Залежностей немає: скрипт керує headless-Chromium по DevTools-протоколу через вбудований у Node
 `WebSocket`. Браузер шукає сам — кеш Playwright/Puppeteer, потім Chrome, Chromium, Edge, Brave,
