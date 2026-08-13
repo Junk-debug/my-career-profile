@@ -17,7 +17,7 @@ making a PDF.
 ## The tool
 
 ```bash
-node .claude/skills/resume-pdf/topdf.mjs out/CV_Acme.html            # → out/CV_Acme.pdf
+node .claude/skills/resume-pdf/topdf.mjs 'out/Acme-Senior-FE/!Jane_Doe_CV.html'  # → ….pdf
 node .claude/skills/resume-pdf/topdf.mjs cv.html --out=resume.pdf    # explicit path
 node .claude/skills/resume-pdf/topdf.mjs cv.html --width=210 --pad=8 # page width, bottom pad (mm)
 node .claude/skills/resume-pdf/topdf.mjs cv.html --side=14           # left/right margins (mm)
@@ -55,7 +55,10 @@ loudly instead of quietly handing over a split resume.
 
 ## Procedure
 
-1. Take the HTML path from the user (or the one `resume-render` just wrote).
+1. Take the HTML path from the user (or the one `resume-render` just wrote). Without `--out` the
+   PDF lands next to it under the same name, which is what the vacancy folder wants. Quote paths
+   in single quotes — resume files start with `!`, and an interactive zsh expands it inside
+   double quotes.
 2. Run the script. Add `--force` only when the user is regenerating a file they already have.
 3. Report the output path and the page size it produced (e.g. `210×293 mm`), so the user knows how
    long the sheet is before sending it anywhere.

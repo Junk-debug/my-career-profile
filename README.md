@@ -86,8 +86,18 @@ node .claude/skills/resume-render/render.mjs placeholders              # що о
 ```
 
 `blocks.md` — вивід скіла `resume-blocks` як є (секції `Title`, `Summary`, `Skills`; коментарі
-після блоку скілів ігноруються). Результат — `out/CV_<компанія>_<посада>.html`; перезапис лише
-з `--force`.
+після блоку скілів ігноруються). Перезапис наявного файлу — лише з `--force`.
+
+Одна вакансія — одна папка `out/<Компанія>-<Посада>/`, файл усередині завжди називається однаково:
+
+```text
+out/Acme-Senior-Frontend-Developer/!Jane_Doe_CV.html
+out/Acme-Senior-Frontend-Developer/!Jane_Doe_CV.pdf
+```
+
+Ім'я файлу — те, що рекрутер побачить у себе в завантаженнях, тож компанія лишається в папці;
+`!` на початку тримає файл угорі списку у Finder. Через цей `!` шлях у терміналі бери в одинарні
+лапки — в інтерактивному zsh подвійні лапки не рятують від history expansion.
 
 `CV_Base.html` скрипт лише читає — базове резюме редагує тільки користувач.
 
@@ -97,9 +107,9 @@ node .claude/skills/resume-render/render.mjs placeholders              # що о
 висоті контенту, тож у файлі рівно одна сторінка й жодного розриву посеред тексту.
 
 ```bash
-node .claude/skills/resume-pdf/topdf.mjs out/CV_Acme.html      # → out/CV_Acme.pdf
-node .claude/skills/resume-pdf/topdf.mjs cv.html --side=14      # бокові поля, мм
-node .claude/skills/resume-pdf/topdf.mjs browsers              # який Chromium буде використано
+node .claude/skills/resume-pdf/topdf.mjs 'out/Acme-Senior-FE/!Jane_Doe_CV.html'
+node .claude/skills/resume-pdf/topdf.mjs cv.html --side=14   # бокові поля, мм
+node .claude/skills/resume-pdf/topdf.mjs browsers            # який Chromium буде використано
 ```
 
 Прапорці: `--out=`, `--width=` (мм, типово 210), `--pad=` (нижній відступ, мм, типово 8),

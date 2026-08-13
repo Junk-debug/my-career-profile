@@ -22,8 +22,8 @@ itself are the user's.
 ## The tool
 
 ```bash
-node .claude/skills/resume-render/render.mjs blocks.md                   # → out/CV_<slug>.html
-node .claude/skills/resume-render/render.mjs blocks.md --company="Acme"  # company in the filename
+node .claude/skills/resume-render/render.mjs blocks.md                   # → out/<Position>/…
+node .claude/skills/resume-render/render.mjs blocks.md --company="Acme"  # → out/Acme-<Position>/…
 node .claude/skills/resume-render/render.mjs blocks.md --out=cv.html     # explicit path; "-" = stdout
 node .claude/skills/resume-render/render.mjs placeholders                # what the base declares
 ```
@@ -60,12 +60,27 @@ answer can be saved to the file as is.
    Summary or the skills lines are missing, stop and ask — do not fill the gap yourself.
 2. **Write them to a file** — `blocks.md` in the scratchpad directory is fine; it is an
    intermediate artifact, not something the repo needs.
-3. **Run the script**, passing `--company` when the vacancy's company is known, so the file is
-   findable later among a dozen tailored CVs.
+3. **Run the script**, passing `--company` when the vacancy's company is known — the company and
+   the position name the folder, which is the only thing telling one application from another.
 4. **Report** the output path. Turning that file into a PDF is again a separate system — the
    `resume-pdf` skill — so mention it exists rather than doing it here.
 
-Result files live in `out/`. One vacancy — one file; regenerating the same one needs `--force`.
+## Where the file lands
+
+One vacancy — one folder, named `<Company>-<Position>` (position only when no company was given):
+
+```
+out/Acme-Senior-Frontend-Developer/!Jane_Doe_CV.html
+```
+
+The file itself is always `!Jane_Doe_CV` — that is the name a recruiter sees in their
+downloads, so it never carries the company; the leading `!` keeps it at the top of a Finder
+listing. Do not rename it per vacancy, and do not fold the vacancy into the filename.
+
+Because of that `!`, always quote the path in single quotes when passing it on
+(`'out/Acme-…/!Jane_Doe_CV.html'`) — an interactive zsh expands `!` inside double quotes.
+
+Regenerating an existing file needs `--force`.
 
 ## When the base changes
 

@@ -4,8 +4,8 @@
  * на блоки Title / Summary / Skills. Нічого не вирішує і не редагує текст —
  * лише вставляє те, що йому дали, і слідкує, щоб жоден плейсхолдер не лишився.
  *
- *   node render.mjs blocks.md                     — → out/CV_<slug>.html
- *   node render.mjs blocks.md --company="Acme"    — компанія потрапляє в ім'я файлу
+ *   node render.mjs blocks.md                     — → out/<Посада>/!Jane_Doe_CV.html
+ *   node render.mjs blocks.md --company="Acme"    — компанія в імені папки вакансії
  *   node render.mjs blocks.md --out=cv.html       — свій шлях (- = у stdout)
  *   node render.mjs placeholders                  — які плейсхолдери є в базі
  *
@@ -158,21 +158,28 @@ const slug = (s) => s
   .replace(/-+/g, '-')
   .slice(0, 60);
 
+/**
+ * Файл завжди називається однаково — це те, що побачить рекрутер у себе в завантаженнях.
+ * "!" на початку тримає його вгорі списку у Finder.
+ */
+const CV_NAME = '!Jane_Doe_CV';
+
+/** out/<Компанія>-<Посада>/!Jane_Doe_CV.html — вакансія в папці, не в імені файлу. */
 function outputPath(blocks, flags) {
   if (flags.has('out')) {
     const value = flags.get('out');
     return value === '-' ? '-' : resolve(process.cwd(), value);
   }
   const company = flags.get('company');
-  const name = ['CV', company && slug(company), slug(blocks.title)].filter(Boolean).join('_');
-  return resolve(DEFAULT_OUT_DIR, `${name}.html`);
+  const folder = [company && slug(company), slug(blocks.title)].filter(Boolean).join('-');
+  return resolve(DEFAULT_OUT_DIR, folder, `${CV_NAME}.html`);
 }
 
 // ─────────────────────────────────────────── main
 
 const USAGE = `Використання:
-  node render.mjs blocks.md                    блоки з файлу (або "-" / stdin) → out/CV_<slug>.html
-  node render.mjs blocks.md --company="Acme"   компанія в імені файлу
+  node render.mjs blocks.md                    блоки з файлу (або "-" / stdin)
+  node render.mjs blocks.md --company="Acme"   → out/Acme-<Посада>/${CV_NAME}.html
   node render.mjs blocks.md --out=cv.html      свій шлях; --out=- друкує html у stdout
   node render.mjs placeholders                 показати плейсхолдери базового резюме
 Прапорці: --base=<шлях> --force
