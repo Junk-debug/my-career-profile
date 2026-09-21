@@ -9,4 +9,7 @@ out/
 skills.csv.bak
 skills.csv.tmp
 
+# секрети для скриптів (session cookie тощо) — ніколи не комітити
+.claude/skills/organize-by-status/.env.local
+
 .DS_Store
