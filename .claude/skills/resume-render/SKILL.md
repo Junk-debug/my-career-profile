@@ -70,15 +70,16 @@ answer can be saved to the file as is.
 One vacancy — one folder, named `<Company>-<Position>` (position only when no company was given):
 
 ```
-out/Acme-Senior-Frontend-Developer/!Jane_Doe_CV.html
+out/Acme-Senior-Frontend-Developer/<resumeFileName>.html
 ```
 
-The file itself is always `!Jane_Doe_CV` — that is the name a recruiter sees in their
-downloads, so it never carries the company; the leading `!` keeps it at the top of a Finder
-listing. Do not rename it per vacancy, and do not fold the vacancy into the filename.
+The file itself is always named after `resumeFileName` in `resume-config.json` (without `.pdf`;
+`CV` when it is not set) — that is the name a recruiter sees in their downloads, so it never
+carries the company; a leading `!` keeps it at the top of a Finder listing. Do not rename it per
+vacancy, and do not fold the vacancy into the filename.
 
-Because of that `!`, always quote the path in single quotes when passing it on
-(`'out/Acme-…/!Jane_Doe_CV.html'`) — an interactive zsh expands `!` inside double quotes.
+The name may start with `!`, so always quote the path in single quotes when passing it on
+(`'out/Acme-…/<resumeFileName>.html'`) — an interactive zsh expands `!` inside double quotes.
 
 Regenerating an existing file needs `--force`.
 

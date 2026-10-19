@@ -98,13 +98,14 @@ node .claude/skills/resume-render/render.mjs placeholders              # що о
 Одна вакансія — одна папка `out/<Компанія>-<Посада>/`, файл усередині завжди називається однаково:
 
 ```text
-out/Acme-Senior-Frontend-Developer/!Jane_Doe_CV.html
-out/Acme-Senior-Frontend-Developer/!Jane_Doe_CV.pdf
+out/Acme-Senior-Frontend-Developer/<resumeFileName>.html
+out/Acme-Senior-Frontend-Developer/<resumeFileName>.pdf
 ```
 
-Ім'я файлу — те, що рекрутер побачить у себе в завантаженнях, тож компанія лишається в папці;
-`!` на початку тримає файл угорі списку у Finder. Через цей `!` шлях у терміналі бери в одинарні
-лапки — в інтерактивному zsh подвійні лапки не рятують від history expansion.
+Ім'я файлу береться з `resumeFileName` у `resume-config.json` (без `.pdf`; без конфігу — `CV`) —
+це те, що рекрутер побачить у себе в завантаженнях, тож компанія лишається в папці;
+`!` на початку тримає файл угорі списку у Finder. Ім'я може починатися з `!`, тож шлях у терміналі
+бери в одинарні лапки — в інтерактивному zsh подвійні лапки не рятують від history expansion.
 
 `CV_Base.html` скрипт лише читає — базове резюме редагує тільки користувач.
 
@@ -114,7 +115,7 @@ out/Acme-Senior-Frontend-Developer/!Jane_Doe_CV.pdf
 висоті контенту, тож у файлі рівно одна сторінка й жодного розриву посеред тексту.
 
 ```bash
-node .claude/skills/resume-pdf/topdf.mjs 'out/Acme-Senior-FE/!Jane_Doe_CV.html'
+node .claude/skills/resume-pdf/topdf.mjs 'out/Acme-Senior-FE/<resumeFileName>.html'
 node .claude/skills/resume-pdf/topdf.mjs cv.html --side=14   # бокові поля, мм
 node .claude/skills/resume-pdf/topdf.mjs browsers            # який Chromium буде використано
 ```
