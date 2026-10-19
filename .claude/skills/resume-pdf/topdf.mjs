@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 /**
- * HTML → PDF однією довгою сторінкою: висота паперу дорівнює висоті контенту,
- * тож у файлі рівно одна сторінка й жодного розриву посеред тексту.
+ * HTML → PDF as one long page: the paper height equals the content height,
+ * so the file has exactly one page and no break in the middle of the text.
  *
  *   node topdf.mjs out/CV_Acme.html              — → out/CV_Acme.pdf
- *   node topdf.mjs cv.html --out=resume.pdf      — свій шлях
- *   node topdf.mjs cv.html --width=210 --pad=8   — ширина й нижній відступ, мм
- *   node topdf.mjs browsers                      — який браузер буде використано
+ *   node topdf.mjs cv.html --out=resume.pdf      — custom path
+ *   node topdf.mjs cv.html --width=210 --pad=8   — width and bottom padding, mm
+ *   node topdf.mjs browsers                      — which browser will be used
  *
- * Керує headless-браузером напряму по DevTools-протоколу (WebSocket є в самому Node),
- * тому жодних npm-залежностей. Потрібен лише будь-який Chromium у системі.
+ * Drives a headless browser directly over the DevTools protocol (WebSocket is built into Node),
+ * so there are no npm dependencies. Any Chromium on the system is enough.
  */
 
 import { spawn } from 'node:child_process';
@@ -21,19 +21,19 @@ import { tmpdir, homedir } from 'node:os';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../../..');
 
-/** Ширина сторінки за замовчуванням, мм (A4 — під неї зверстано базове резюме). */
+/** Default page width, mm (A4 — what the base resume is laid out for). */
 const WIDTH_MM = 210;
-/** Нижній відступ, щоб останній рядок не впирався в край, мм. */
+/** Bottom padding so the last line does not touch the edge, mm. */
 const PAD_MM = 8;
-/** Скільки чекати на браузер, мс. */
+/** How long to wait for the browser, ms. */
 const TIMEOUT = 30_000;
 
 const MM_PER_IN = 25.4;
 const PX_PER_IN = 96;
 
-// ─────────────────────────────────────────── пошук браузера
+// ─────────────────────────────────────────── finding a browser
 
-/** Кандидати в порядку надійності: спершу браузери для автоматизації, потім звичайні. */
+/** Candidates in order of reliability: automation browsers first, then regular ones. */
 function browserCandidates() {
   const home = homedir();
   const list = [];
@@ -42,7 +42,7 @@ function browserCandidates() {
     if (!existsSync(root)) return;
     for (const dir of readdirSync(root)) list.push(join(root, dir, ...tail));
   };
-  // кеші playwright / puppeteer: усередині лежить "Chrome for Testing"
+  // playwright / puppeteer caches: "Chrome for Testing" lives inside
   fromCache(join(home, 'Library/Caches/ms-playwright'), 'chrome-mac-arm64', 'Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing');
   fromCache(join(home, 'Library/Caches/ms-playwright'), 'chrome-mac', 'Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing');
   fromCache(join(home, '.cache/puppeteer/chrome'), 'chrome-mac-arm64', 'Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing');
@@ -77,9 +77,9 @@ function findBrowser(explicit) {
   return found;
 }
 
-// ─────────────────────────────────────────── маленький клієнт DevTools-протоколу
+// ─────────────────────────────────────────── a tiny DevTools protocol client
 
-/** Піднімає headless-браузер і повертає ws-адресу його DevTools. */
+/** Starts a headless browser and returns the ws address of its DevTools. */
 function launch(binary, profileDir) {
   const child = spawn(binary, [
     '--headless=new',
@@ -108,7 +108,7 @@ function launch(binary, profileDir) {
   return { child, wsUrl };
 }
 
-/** Обгортка над WebSocket: send(method, params, sessionId) і очікування подій. */
+/** A WebSocket wrapper: send(method, params, sessionId) and waiting for events. */
 async function connect(url) {
   const socket = new WebSocket(url);
   await new Promise((ok, fail) => {
@@ -158,18 +158,18 @@ async function connect(url) {
   return { send, once, close: () => socket.close() };
 }
 
-/** Скільки об'єктів-сторінок у готовому PDF (Chromium пише їх відкритим текстом). */
+/** How many page objects the finished PDF has (Chromium writes them as plain text). */
 function countPages(buffer) {
   const matches = buffer.toString('latin1').match(/\/Type\s*\/Page[^s]/g);
   return matches ? matches.length : null;
 }
 
-// ─────────────────────────────────────────── власне рендер
+// ─────────────────────────────────────────── the render itself
 
 /**
- * Бокові поля живуть у самому html (експорт Google Docs дає body з padding 57.6pt
- * і max-width 480.1pt). --side переписує їх на час друку, не чіпаючи файл:
- * знімаємо max-width, інакше колонка тексту лишиться завширшки як була.
+ * Side margins live in the html itself (the Google Docs export gives body a padding of 57.6pt
+ * and a max-width of 480.1pt). --side overrides them while printing without touching the file:
+ * max-width is dropped, otherwise the text column would keep its old width.
  */
 const sideStyle = (sideMm) => `body{max-width:none !important;`
   + `padding-left:${sideMm}mm !important;padding-right:${sideMm}mm !important}`;
@@ -187,8 +187,8 @@ async function renderPdf(htmlPath, { binary, widthMm, padMm, scale, sideMm }) {
 
     const widthPx = Math.round((widthMm / MM_PER_IN) * PX_PER_IN);
     await page('Page.enable');
-    // ширина в'юпорта = ширина паперу, щоб виміряна висота збіглася з надрукованою;
-    // висота — мінімальна, інакше scrollHeight ніколи не буде меншим за в'юпорт
+    // viewport width = paper width, so the measured height matches the printed one;
+    // the height is minimal, otherwise scrollHeight would never be smaller than the viewport
     await page('Emulation.setDeviceMetricsOverride', { width: widthPx, height: 20, deviceScaleFactor: 1, mobile: false });
     await page('Emulation.setEmulatedMedia', { media: 'print' });
 
@@ -241,7 +241,7 @@ async function renderPdf(htmlPath, { binary, widthMm, padMm, scale, sideMm }) {
       heightMm: heightIn * MM_PER_IN,
     };
   } finally {
-    try { await cdp?.send('Browser.close'); } catch { /* браузер уже міг впасти */ }
+    try { await cdp?.send('Browser.close'); } catch { /* the browser may already be gone */ }
     cdp?.close();
     child.kill();
     rmSync(profileDir, { recursive: true, force: true });

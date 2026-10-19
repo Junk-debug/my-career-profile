@@ -1,13 +1,12 @@
-# career profile — мої дані
+# Career profile — my data
 
-Приватний репозиторій даних для репозиторію коду career profile (`../my-career-profile`).
-Скіли `resume-blocks`, `resume-render`, `resume-pdf`, `organize-by-status` живуть там і
-читають ці файли через симлінки в корені репозиторію коду.
+Private data repository for the career profile code repository (`../my-career-profile`). The
+`resume-blocks`, `resume-render`, `resume-pdf` and `organize-by-status` skills live there and read
+these files through symlinks in the root of the code repository.
 
-## Правила
+## Rules
 
-- **Ніколи не пушити в публічний remote.** Лише приватний.
-- Коду тут немає й не буде: скрипти та скіли належать репозиторію коду.
-- `skills.csv` і `CV_Base.html` редагує тільки користувач. Агент їх лише читає.
-- `out/` наповнюють `resume-render` і `resume-pdf`; `organize-by-status` розкладає його
-  за статусами.
+- **Never push to a public remote.** Private only.
+- There is no code here and never will be: scripts and skills belong in the code repository.
+- Only the user edits `skills.csv`, `CV_Base.html` and `resume-config.json`. The agent only reads them.
+- `out/` is filled by `resume-render` and `resume-pdf`; `organize-by-status` sorts it by status.

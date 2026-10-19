@@ -2,8 +2,8 @@ node_modules/
 dist/
 *.tsbuildinfo
 
-# особисті дані живуть в окремому приватному репо (../my-career-profile-data);
-# тут лише симлінки на них — ніколи не комітити
+# personal data lives in a separate private repo (../my-career-profile-data);
+# only symlinks to it live here — never commit them
 /skills.csv
 /skills.json
 /skills.md
@@ -13,15 +13,15 @@ dist/
 /out
 /.data-dir
 
-# згенеровані резюме
+# generated resumes
 out/
 !/templates/data-repo/out/
 
-# службові файли застосунку
+# skills-rating app working files
 skills.csv.bak
 skills.csv.tmp
 
-# секрети для скриптів (session cookie тощо) — ніколи не комітити
+# script secrets (session cookie etc.) — never commit
 .claude/skills/organize-by-status/.env.local
 **/.env.local
 

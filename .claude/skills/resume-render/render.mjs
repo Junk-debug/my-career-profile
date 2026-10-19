@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 /**
- * Складає готове резюме: копія CV_Base.html, у якій плейсхолдери замінені
- * на блоки Title / Summary / Skills. Нічого не вирішує і не редагує текст —
- * лише вставляє те, що йому дали, і слідкує, щоб жоден плейсхолдер не лишився.
+ * Assembles a finished resume: a copy of CV_Base.html with its placeholders replaced
+ * by the Title / Summary / Skills blocks. It decides nothing and edits no text —
+ * it only inserts what it is given and makes sure no placeholder is left.
  *
- *   node render.mjs blocks.md                     — → out/<Посада>/<resumeFileName>.html
- *   node render.mjs blocks.md --company="Acme"    — компанія в імені папки вакансії
- *   node render.mjs blocks.md --out=cv.html       — свій шлях (- = у stdout)
- *   node render.mjs placeholders                  — які плейсхолдери є в базі
+ *   node render.mjs blocks.md                     — → out/<Position>/<resumeFileName>.html
+ *   node render.mjs blocks.md --company="Acme"    — company in the vacancy folder name
+ *   node render.mjs blocks.md --out=cv.html       — custom path (- = stdout)
+ *   node render.mjs placeholders                  — which placeholders the base has
  *
- * Прапорці: --base=<шлях до базового html>, --force (перезаписати наявний файл)
+ * Flags: --base=<path to the base html>, --force (overwrite an existing file)
  */
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
@@ -21,39 +21,39 @@ const ROOT = resolve(HERE, '../../..');
 const DEFAULT_BASE = resolve(ROOT, 'CV_Base.html');
 const DEFAULT_OUT_DIR = resolve(ROOT, 'out');
 
-/** Плейсхолдери базового резюме. Ключ — секція блоків, значення — текст у дужках. */
+/** Placeholders of the base resume. Key — block section, value — the bracketed text. */
 const PLACEHOLDERS = {
   title: '[Position placeholder]',
   summary: '[Summary placeholder]',
   skills: '[skills placeholder]',
 };
 
-/** Класи Google Docs у базі: c7 c4 — жирний 10.5pt, c0 — звичайний, c14 — абзац рядка скілів.
- *  Google Docs перенумеровує їх при кожному повторному експорті — після заміни
- *  CV_Base.html звіряй ці три значення з новим CSS. */
+/** Google Docs classes in the base: c7 c4 — bold 10.5pt, c0 — regular, c14 — skills line paragraph.
+ *  Google Docs renumbers them on every re-export — after replacing
+ *  CV_Base.html, check these three values against the new CSS. */
 const BOLD = 'c7 c4';
 const PLAIN = 'c0';
 const LINE = 'c14';
 
-// ─────────────────────────────────────────── розбір блоків
+// ─────────────────────────────────────────── parsing blocks
 
 const SECTIONS = ['title', 'summary', 'skills'];
-/** "**Title:** ...", "Title: ...", "## Skills" — усе це початок секції. */
+/** "**Title:** ...", "Title: ...", "## Skills" — each of these starts a section. */
 const HEADER = new RegExp(`^\\s*#*\\s*[*_]*\\s*(${SECTIONS.join('|')})\\s*[*_]*\\s*:?\\s*(.*)$`, 'i');
 
 const stripMd = (s) => s.replace(/[*_`]/g, '').trim();
 
 /**
- * Читає вивід скіла resume-blocks як є:
+ * Reads the output of the resume-blocks skill as is:
  *
  *   **Title:** Senior Frontend Developer
- *   **Summary:** ...речення...
+ *   **Summary:** ...sentences...
  *   **Skills:**
  *   Frontend: React, Next.js, TypeScript
  *   Backend & Data: Node.js (NestJS), GraphQL
  *
- * Усе, що йде після блоку скілів і не схоже на рядок "Категорія: елементи",
- * вважається коментарем агента й ігнорується.
+ * Anything after the skills block that does not look like a "Category: items" line
+ * is treated as the agent's commentary and ignored.
  */
 function parseBlocks(text) {
   const found = { title: [], summary: [], skills: [] };
@@ -71,13 +71,13 @@ function parseBlocks(text) {
 
     const line = stripMd(raw);
     if (line === '') {
-      // порожній рядок закриває секцію; у скілах — лише коли рядки вже пішли,
-      // бо між "**Skills:**" і першою категорією порожній рядок цілком нормальний
+      // an empty line closes a section; in skills — only once lines have started,
+      // since an empty line between "**Skills:**" and the first category is perfectly normal
       if (current !== 'skills' || found.skills.length > 0) current = null;
       continue;
     }
     if (current === 'skills' && !line.includes(':')) {
-      current = null; // пішла проза після блоку — далі вже не наша справа
+      current = null; // prose after the block — not ours to parse
       continue;
     }
     found[current].push(line);
@@ -104,14 +104,14 @@ function validate(blocks) {
   return problems;
 }
 
-// ─────────────────────────────────────────── вставка в html
+// ─────────────────────────────────────────── inserting into html
 
 const escapeHtml = (s) => s
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
   .replace(/>/g, '&gt;');
 
-/** Рядки блоку скілів у тій самій розмітці, що й сусідні рядки бази. */
+/** Skills block lines in the same markup as the neighboring lines of the base. */
 function renderSkills(skills) {
   return skills
     .map(({ category, items }) => `<p class="${LINE}"><span class="${BOLD}">${escapeHtml(category)}</span>`
@@ -119,7 +119,7 @@ function renderSkills(skills) {
     .join('');
 }
 
-/** Абзац, усередині якого сидить плейсхолдер (щоб замінити рядок цілком, а не текст у ньому). */
+/** The paragraph the placeholder sits in (to replace the whole line, not just its text). */
 function paragraphAround(html, index) {
   const start = html.lastIndexOf('<p', index);
   const end = html.indexOf('</p>', index);
@@ -148,7 +148,7 @@ function fill(base, blocks) {
   return html;
 }
 
-// ─────────────────────────────────────────── ім'я файлу
+// ─────────────────────────────────────────── file name
 
 const slug = (s) => s
   .normalize('NFKD')
@@ -159,8 +159,8 @@ const slug = (s) => s
   .slice(0, 60);
 
 /**
- * Файл завжди називається однаково — це те, що побачить рекрутер у себе в завантаженнях.
- * "!" на початку тримає його вгорі списку у Finder.
+ * The file always has the same name — it is what a recruiter sees in their downloads.
+ * A leading "!" keeps it at the top of a Finder listing.
  */
 const CONFIG_PATH = resolve(ROOT, 'resume-config.json');
 const DEFAULT_CV_NAME = 'CV';
@@ -173,7 +173,7 @@ function readCvName() {
 
 const CV_NAME = readCvName();
 
-/** out/<Компанія>-<Посада>/<resumeFileName>.html — вакансія в папці, не в імені файлу. */
+/** out/<Company>-<Position>/<resumeFileName>.html — the vacancy goes in the folder, not the file name. */
 function outputPath(blocks, flags) {
   if (flags.has('out')) {
     const value = flags.get('out');

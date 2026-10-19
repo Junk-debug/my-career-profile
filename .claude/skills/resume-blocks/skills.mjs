@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * Довідник по skills.csv для агента. Нічого не вирішує за модель:
- * лише відповідає, яка оцінка в скіла і чи є він у базі взагалі.
+ * A skills.csv lookup for the agent. It decides nothing for the model:
+ * it only answers what a skill is rated and whether it is in the base at all.
  *
- *   node skills.mjs rate "React" "Next.js" "Rust"   — оцінки для вибраних термінів
- *   node skills.mjs search "state"                  — пошук назви в базі
- *   node skills.mjs list --min=4 --grep=test        — перегляд бази
+ *   node skills.mjs rate "React" "Next.js" "Rust"   — ratings for chosen terms
+ *   node skills.mjs search "state"                  — find a name in the base
+ *   node skills.mjs list --min=4 --grep=test        — browse the base
  *
- * Спільні прапорці: --json, --csv=<шлях до іншого skills.csv>
+ * Common flags: --json, --csv=<path to another skills.csv>
  */
 
 import { readFileSync } from 'node:fs';
@@ -17,18 +17,18 @@ import { dirname, resolve } from 'node:path';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_CSV = resolve(HERE, '../../../skills.csv');
 
-/** Мінімальна оцінка для звичайної згадки в резюме. */
+/** Minimum rating for a plain mention in the resume. */
 const MIN_RATING = 3;
-/** Оцінка 2 живе лише в хвості рядка блоку скілів і лише як вимога вакансії. */
+/** Rating 2 lives only at the tail of a skills block line, and only as a vacancy requirement. */
 const TAIL_RATING = 2;
-/** Від цієї оцінки скіл вважається сильним. */
+/** From this rating up a skill counts as strong. */
 const CORE_RATING = 4;
-/** Нижче цієї схожості збіг вважається непевним і потребує рішення моделі. */
+/** Below this similarity a match is uncertain and needs the model's decision. */
 const CONFIDENT = 0.82;
 
 // ─────────────────────────────────────────── CSV
 
-/** Розбирає рядок CSV з урахуванням лапок. */
+/** Parses a CSV line, honoring quotes. */
 function parseCsvLine(line) {
   const cells = [];
   let cell = '';
@@ -47,7 +47,7 @@ function parseCsvLine(line) {
   return cells;
 }
 
-/** Читає skills.csv у масив { name, rating } зі збереженням порядку файлу. */
+/** Reads skills.csv into an array of { name, rating }, keeping the file order. */
 function readSkills(path) {
   const lines = readFileSync(path, 'utf8').split(/\r?\n/).filter((l) => l.trim() !== '');
   const header = parseCsvLine(lines[0]).map((h) => h.trim().toLowerCase());
@@ -62,9 +62,9 @@ function readSkills(path) {
   }).filter((s) => s.name !== '');
 }
 
-// ─────────────────────────────────────────── схожість назв
+// ─────────────────────────────────────────── name similarity
 
-/** "Next.js / NextJS" → "next js"; спільна форма для порівняння написань. */
+/** "Next.js / NextJS" → "next js"; a common form for comparing spellings. */
 const normalize = (s) => s.toLowerCase().replace(/[^a-z0-9+#]+/g, ' ').trim();
 const compact = (s) => normalize(s).replace(/ /g, '');
 
@@ -83,10 +83,10 @@ function levenshtein(a, b) {
   return prev[b.length];
 }
 
-/** Технічний "шум" у кінці назви: Node ≈ Node.js, REST ≈ REST API. */
+/** Technical "noise" at the end of a name: Node ≈ Node.js, REST ≈ REST API. */
 const TAIL_NOISE = /(js|css|sql|db|api|apis|ui|framework|library)$/;
 
-/** 0..1: наскільки запит схожий на назву скіла. Без синонімів — лише написання. */
+/** 0..1: how similar a query is to a skill name. No synonyms — spelling only. */
 function similarity(query, name) {
   const q = normalize(query);
   const n = normalize(name);
@@ -97,7 +97,7 @@ function similarity(query, name) {
   if (qc === nc) return 0.97;
   if (qc.replace(TAIL_NOISE, '') === nc.replace(TAIL_NOISE, '')) return 0.95;
 
-  // "TanStack Query / React Query" — це кілька написань того самого скіла
+  // "TanStack Query / React Query" — several spellings of the same skill
   const parts = name.split('/').map((p) => p.trim()).filter((p) => p.length > 2);
   if (parts.length > 1) {
     const best = Math.max(...parts.map((p) => similarity(query, p)));
@@ -111,8 +111,8 @@ function similarity(query, name) {
   let score = 0;
   if (shared.length > 0) {
     const jaccard = shared.length / new Set([...qTokens, ...nTokens]).size;
-    // ті самі слова в іншому порядку — це часто інший скіл:
-    // "design system" ≠ "System Design", тож упевненість занижуємо
+    // the same words in a different order are often a different skill:
+    // "design system" ≠ "System Design", so confidence is lowered
     const sameOrder = shared.every((t, i, arr) => i === 0
       || qTokens.indexOf(t) > qTokens.indexOf(arr[i - 1]) === nTokens.indexOf(t) > nTokens.indexOf(arr[i - 1]));
     score = Math.max(score, (0.55 + 0.4 * jaccard) * (sameOrder ? 1 : 0.85));
@@ -127,7 +127,7 @@ function similarity(query, name) {
   return Math.min(score, 0.96);
 }
 
-/** Топ кандидатів на термін, від найкращого. */
+/** Top candidates for a term, best first. */
 function candidates(query, skills, limit = 4) {
   return skills
     .map((s) => ({ ...s, score: similarity(query, s.name) }))
@@ -136,7 +136,7 @@ function candidates(query, skills, limit = 4) {
     .slice(0, limit);
 }
 
-// ─────────────────────────────────────────── вердикти
+// ─────────────────────────────────────────── verdicts
 
 const VERDICT = {
   core: 'use freely',
@@ -176,13 +176,13 @@ function rate(terms, skills) {
   });
 }
 
-// ─────────────────────────────────────────── перевірка блоку скілів
+// ─────────────────────────────────────────── checking the skills block
 
 /**
- * Витягує елементи з чернетки блоку "Category: a, b, c (d)".
- * Довгі шматки — це речення, а не назви скілів, тож їх пропускаємо.
- * Слеш ділить елементи ("React / Vue") лише тоді, коли цілий шматок
- * не є відомим скілом — інакше "CI/CD" розсипалось би на "CI" і "CD".
+ * Extracts the items from a draft block "Category: a, b, c (d)".
+ * Long chunks are sentences, not skill names, so they are skipped.
+ * A slash splits items ("React / Vue") only when the whole chunk
+ * is not a known skill — otherwise "CI/CD" would fall apart into "CI" and "CD".
  */
 function parseDraft(text, isKnown) {
   const items = [];
@@ -212,8 +212,8 @@ function parseDraft(text, isKnown) {
 }
 
 /**
- * Звіряє чернетку блоку з вимогами вакансії: що з обов'язкового забули,
- * що заборонене просочилось і чи не стоять слабкі скіли (оцінка 2) не в хвості рядка.
+ * Checks a draft block against the vacancy requirements: which required items were forgotten,
+ * what forbidden items leaked in, and whether weak skills (rating 2) sit outside the tail of a line.
  */
 function check(draftText, vacancyTerms, skills) {
   const resolve = (term) => {
@@ -225,7 +225,7 @@ function check(draftText, vacancyTerms, skills) {
     .map((item) => ({ ...item, hit: resolve(item.term) }));
   const covered = new Set(draftRows.filter((r) => r.hit).map((r) => r.hit.name));
 
-  // вимоги вакансії: ≥3 обов'язкові, 2 — дозволені в хвості рядка
+  // vacancy requirements: ≥3 required, 2 allowed at the tail of a line
   const required = [];
   const optional = [];
   const askedFor = new Set();
@@ -248,7 +248,7 @@ function check(draftText, vacancyTerms, skills) {
     });
   };
 
-  // у кожному рядку слабкий скіл має стояти після всіх сильних
+  // in every line a weak skill must come after all strong ones
   const lastStrongInLine = new Map();
   for (const r of draftRows) {
     if (r.hit && r.hit.rating !== null && r.hit.rating >= MIN_RATING) {
@@ -276,7 +276,7 @@ function check(draftText, vacancyTerms, skills) {
   };
 }
 
-// ─────────────────────────────────────────── вивід
+// ─────────────────────────────────────────── output
 
 const ratingCell = (r) => (r === null ? '—' : String(r));
 
@@ -367,7 +367,7 @@ function main(argv) {
   const limit = Number(flags.get('limit') ?? 12);
 
   if (command === 'rate') {
-    // терміни можна передати аргументами або по одному в рядку через stdin
+    // terms come as arguments or one per line on stdin
     const terms = rest.length > 0 ? rest : readFileSync(0, 'utf8').split('\n').map((t) => t.trim()).filter(Boolean);
     if (terms.length === 0) { console.error(USAGE); process.exit(2); }
     const rows = rate(terms, skills);
