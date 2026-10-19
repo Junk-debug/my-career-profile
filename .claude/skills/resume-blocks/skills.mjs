@@ -53,7 +53,7 @@ function readSkills(path) {
   const header = parseCsvLine(lines[0]).map((h) => h.trim().toLowerCase());
   const nameIdx = header.indexOf('skill');
   const ratingIdx = header.indexOf('rating');
-  if (nameIdx === -1 || ratingIdx === -1) throw new Error(`У ${path} немає колонок skill/rating`);
+  if (nameIdx === -1 || ratingIdx === -1) throw new Error(`${path} has no skill/rating columns`);
 
   return lines.slice(1).map((line) => {
     const cells = parseCsvLine(line);
@@ -287,48 +287,48 @@ function renderRate(rows) {
   }
   const notes = rows.filter((r) => r.alternatives.length > 0 && (r.verdict === 'unsure' || r.rating === null));
   if (notes.length) {
-    out.push('', 'Кандидати для непевних термінів:');
+    out.push('', 'Candidates for uncertain terms:');
     for (const r of notes) {
       out.push(`- ${r.term} → ${r.alternatives.map((a) => `${a.name} (${ratingCell(a.rating)})`).join(', ')}`);
     }
   }
-  out.push('', `Правило: ${CORE_RATING}–5 вільно · ${MIN_RATING} у прозі з хеджем · ${TAIL_RATING} лише в хвості рядка блоку скілів`);
-  out.push('і лише якщо цього просить вакансія · ≤1, без оцінки й "не в базі" — не писати ніде.');
+  out.push('', `Rule: ${CORE_RATING}–5 freely · ${MIN_RATING} hedged in prose · ${TAIL_RATING} only at the tail of a skills block line`);
+  out.push('and only if the vacancy asks for it · ≤1, unrated and "not in base" — never write anywhere.');
   return `${out.join('\n')}\n`;
 }
 
 function renderCheck(r) {
-  const out = [`Елементів у блоці: ${r.total} · вимог вакансії з оцінкою ≥${MIN_RATING}: ${r.requiredCount}`];
+  const out = [`Items in the block: ${r.total} · vacancy requirements rated ≥${MIN_RATING}: ${r.requiredCount}`];
 
-  out.push('', '## MISSING — вимоги вакансії з оцінкою ≥3, яких немає в блоці (додати обов’язково)');
-  out.push(r.missing.length ? r.missing.map((s) => `- ${s.name} (${ratingCell(s.rating)})`).join('\n') : '_нічого не забуто_');
+  out.push('', '## MISSING — vacancy requirements rated ≥3 that are not in the block (must add)');
+  out.push(r.missing.length ? r.missing.map((s) => `- ${s.name} (${ratingCell(s.rating)})`).join('\n') : '_nothing missing_');
 
-  out.push('', '## FORBIDDEN — у блоці є те, що оцінене ≤1 або не оцінене (прибрати)');
-  out.push(r.forbidden.length ? r.forbidden.map((f) => `- ${f.term} → ${f.name} (${ratingCell(f.rating)}) у "${f.category}"`).join('\n') : '_чисто_');
+  out.push('', '## FORBIDDEN — the block has items rated ≤1 or unrated (remove)');
+  out.push(r.forbidden.length ? r.forbidden.map((f) => `- ${f.term} → ${f.name} (${ratingCell(f.rating)}) in "${f.category}"`).join('\n') : '_clean_');
 
   if (r.weakNotRequired.length) {
-    out.push('', '## WEAK, НЕ З ВАКАНСІЇ — оцінка 2 без запиту вакансії (прибрати)');
-    out.push(r.weakNotRequired.map((f) => `- ${f.term} → ${f.name} у "${f.category}"`).join('\n'));
+    out.push('', '## WEAK, NOT FROM THE VACANCY — rating 2 the vacancy did not ask for (remove)');
+    out.push(r.weakNotRequired.map((f) => `- ${f.term} → ${f.name} in "${f.category}"`).join('\n'));
   }
   if (r.misplaced.length) {
-    out.push('', '## ПОРЯДОК — оцінка 2 стоїть не в кінці свого рядка (перенести в хвіст)');
-    out.push(r.misplaced.map((f) => `- ${f.term} у "${f.category}"`).join('\n'));
+    out.push('', '## ORDER — rating 2 is not at the end of its line (move it to the tail)');
+    out.push(r.misplaced.map((f) => `- ${f.term} in "${f.category}"`).join('\n'));
   }
   if (r.optionalMissing.length) {
-    out.push('', '## OPTIONAL — вимоги вакансії з оцінкою 2, яких немає в блоці');
-    out.push('Можна додати в кінець відповідного рядка, щоб покрити ключове слово без акценту.');
+    out.push('', '## OPTIONAL — vacancy requirements rated 2 that are not in the block');
+    out.push('Can be added at the end of the matching line to cover the keyword without emphasis.');
     out.push(r.optionalMissing.map((s) => `- ${s.name} (${ratingCell(s.rating)})`).join('\n'));
   }
 
   if (r.unknown.length) {
-    out.push('', '## UNKNOWN — не впізнано в базі');
-    out.push('ATS-дублікати (TS, JS) і формулювання категорій — норма. Решту перевір сам.');
+    out.push('', '## UNKNOWN — not recognized in the base');
+    out.push('ATS duplicates (TS, JS) and category wording are normal. Check the rest yourself.');
     out.push(r.unknown.map((t) => `- ${t}`).join('\n'));
   }
   if (r.unresolvedVacancyTerms.length) {
-    out.push('', '## Терміни вакансії, не зіставлені з базою однозначно');
-    out.push('Прожени через `rate`/`search` і виріши сам: або це інша назва відомого скіла,');
-    out.push('або справжня прогалина, про яку треба сказати користувачу.');
+    out.push('', '## Vacancy terms not matched to the base unambiguously');
+    out.push('Run them through `rate`/`search` and decide yourself: either it is another name for a known skill,');
+    out.push('or a real gap the user needs to be told about.');
     out.push(r.unresolvedVacancyTerms.map((t) => `- ${t}`).join('\n'));
   }
   return `${out.join('\n')}\n`;
@@ -337,18 +337,18 @@ function renderCheck(r) {
 function renderList(rows) {
   const out = ['| skill | rating |', '| --- | --- |'];
   for (const s of rows) out.push(`| ${s.name} | ${ratingCell(s.rating)} |`);
-  out.push('', `${rows.length} скілів`);
+  out.push('', `${rows.length} skills`);
   return `${out.join('\n')}\n`;
 }
 
 // ─────────────────────────────────────────── main
 
-const USAGE = `Використання:
-  node skills.mjs rate "React" "Next.js" "Rust"    оцінки для термінів, які ти вибрав із вакансії
-  node skills.mjs search "state management"        як скіл названий у базі
-  node skills.mjs list --min=4 --grep=test         перегляд бази
-  node skills.mjs check draft.txt "React" "Kafka"  чернетка блоку скілів проти вимог вакансії
-Прапорці: --json --csv=<шлях> --limit=<n> --min=<n> --max=<n> --grep=<текст>`;
+const USAGE = `Usage:
+  node skills.mjs rate "React" "Next.js" "Rust"    ratings for the terms you picked from the vacancy
+  node skills.mjs search "state management"        how a skill is named in the base
+  node skills.mjs list --min=4 --grep=test         browse the base
+  node skills.mjs check draft.txt "React" "Kafka"  a skills block draft against the vacancy requirements
+Flags: --json --csv=<path> --limit=<n> --min=<n> --max=<n> --grep=<text>`;
 
 function main(argv) {
   const args = argv.slice(2);

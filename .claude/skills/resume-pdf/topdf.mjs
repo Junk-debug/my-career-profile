@@ -66,13 +66,13 @@ function findBrowser(explicit) {
     ?? process.env.PUPPETEER_EXECUTABLE_PATH;
   if (wanted) {
     const path = resolve(process.cwd(), wanted);
-    if (!existsSync(path)) throw new Error(`браузер не знайдено: ${path}`);
+    if (!existsSync(path)) throw new Error(`browser not found: ${path}`);
     return path;
   }
   const found = browserCandidates().find((p) => existsSync(p));
   if (!found) {
-    throw new Error('не знайдено жодного Chromium.\n'
-      + 'Постав Google Chrome або вкажи шлях: --browser=<шлях> чи CHROME_PATH=<шлях>');
+    throw new Error('no Chromium found.\n'
+      + 'Install Google Chrome or give a path: --browser=<path> or CHROME_PATH=<path>');
   }
   return found;
 }
@@ -96,13 +96,13 @@ function launch(binary, profileDir) {
 
   const wsUrl = new Promise((ok, fail) => {
     let stderr = '';
-    const timer = setTimeout(() => fail(new Error(`браузер не відповів за ${TIMEOUT} мс:\n${stderr.slice(-500)}`)), TIMEOUT);
+    const timer = setTimeout(() => fail(new Error(`browser did not answer within ${TIMEOUT} ms:\n${stderr.slice(-500)}`)), TIMEOUT);
     child.stderr.on('data', (chunk) => {
       stderr += chunk;
       const match = stderr.match(/ws:\/\/\S+/);
       if (match) { clearTimeout(timer); ok(match[0]); }
     });
-    child.on('exit', (code) => { clearTimeout(timer); fail(new Error(`браузер завершився з кодом ${code}:\n${stderr.slice(-500)}`)); });
+    child.on('exit', (code) => { clearTimeout(timer); fail(new Error(`browser exited with code ${code}:\n${stderr.slice(-500)}`)); });
   });
 
   return { child, wsUrl };
@@ -113,7 +113,7 @@ async function connect(url) {
   const socket = new WebSocket(url);
   await new Promise((ok, fail) => {
     socket.addEventListener('open', ok, { once: true });
-    socket.addEventListener('error', () => fail(new Error(`не вдалось під'єднатись до ${url}`)), { once: true });
+    socket.addEventListener('error', () => fail(new Error(`could not connect to ${url}`)), { once: true });
   });
 
   let nextId = 0;
@@ -150,7 +150,7 @@ async function connect(url) {
     setTimeout(() => {
       if (waiters.includes(waiter)) {
         waiters.splice(waiters.indexOf(waiter), 1);
-        fail(new Error(`не дочекались події ${method}`));
+        fail(new Error(`timed out waiting for event ${method}`));
       }
     }, TIMEOUT);
   });
@@ -219,7 +219,7 @@ async function renderPdf(htmlPath, { binary, widthMm, padMm, scale, sideMm }) {
       awaitPromise: true,
       returnByValue: true,
     });
-    if (measured.exceptionDetails) throw new Error(`не вдалось виміряти висоту: ${measured.exceptionDetails.text}`);
+    if (measured.exceptionDetails) throw new Error(`could not measure the height: ${measured.exceptionDetails.text}`);
     const contentPx = measured.result.value;
 
     const heightIn = contentPx / PX_PER_IN + padMm / MM_PER_IN;
@@ -250,14 +250,14 @@ async function renderPdf(htmlPath, { binary, widthMm, padMm, scale, sideMm }) {
 
 // ─────────────────────────────────────────── main
 
-const USAGE = `Використання:
-  node topdf.mjs out/CV_Acme.html             html → pdf поруч із ним, одна довга сторінка
-  node topdf.mjs cv.html --out=resume.pdf     свій шлях
-  node topdf.mjs cv.html --width=210 --pad=8  ширина сторінки й нижній відступ, мм
-  node topdf.mjs cv.html --side=14            бокові поля, мм (типово — як у html)
-  node topdf.mjs cv.html --scale=0.95         масштаб контенту
-  node topdf.mjs browsers                     який Chromium буде використано
-Прапорці: --browser=<шлях> (або CHROME_PATH) --force`;
+const USAGE = `Usage:
+  node topdf.mjs out/CV_Acme.html             html → pdf next to it, one long page
+  node topdf.mjs cv.html --out=resume.pdf     custom path
+  node topdf.mjs cv.html --width=210 --pad=8  page width and bottom padding, mm
+  node topdf.mjs cv.html --side=14            side margins, mm (default — as in the html)
+  node topdf.mjs cv.html --scale=0.95         content scale
+  node topdf.mjs browsers                     which Chromium will be used
+Flags: --browser=<path> (or CHROME_PATH) --force`;
 
 async function main(argv) {
   const args = argv.slice(2);
@@ -271,19 +271,19 @@ async function main(argv) {
 
   if (positional[0] === 'browsers') {
     const found = browserCandidates().filter((p) => existsSync(p));
-    console.log(found.length ? `Буде використано:\n  ${found[0]}` : 'Chromium не знайдено');
-    if (found.length > 1) console.log(`Ще знайдено:\n${found.slice(1).map((p) => `  ${p}`).join('\n')}`);
+    console.log(found.length ? `Will use:\n  ${found[0]}` : 'Chromium not found');
+    if (found.length > 1) console.log(`Also found:\n${found.slice(1).map((p) => `  ${p}`).join('\n')}`);
     return;
   }
 
   const htmlPath = resolve(process.cwd(), positional[0]);
-  if (!existsSync(htmlPath)) { console.error(`немає файлу ${positional[0]}`); process.exit(2); }
+  if (!existsSync(htmlPath)) { console.error(`no such file: ${positional[0]}`); process.exit(2); }
 
   const target = flags.has('out')
     ? resolve(process.cwd(), flags.get('out'))
     : join(dirname(htmlPath), `${basename(htmlPath, extname(htmlPath))}.pdf`);
   if (existsSync(target) && !flags.has('force')) {
-    console.error(`${relative(ROOT, target)} вже існує — додай --force, щоб перезаписати`);
+    console.error(`${relative(ROOT, target)} already exists — add --force to overwrite`);
     process.exit(1);
   }
 
@@ -300,10 +300,10 @@ async function main(argv) {
 
   const pages = countPages(buffer);
   console.log(`${relative(ROOT, target)}`);
-  console.log(`  сторінка: ${Math.round(Number(flags.get('width') ?? WIDTH_MM))}×${Math.round(heightMm)} мм (контент ${contentPx}px)`);
-  console.log(`  розмір:   ${(buffer.length / 1024).toFixed(0)} КБ`);
+  console.log(`  page: ${Math.round(Number(flags.get('width') ?? WIDTH_MM))}×${Math.round(heightMm)} mm (content ${contentPx}px)`);
+  console.log(`  size: ${(buffer.length / 1024).toFixed(0)} KB`);
   if (pages !== null && pages !== 1) {
-    console.error(`  УВАГА: у файлі ${pages} сторінок — висота порахована неточно, спробуй інший --pad`);
+    console.error(`  WARNING: the file has ${pages} pages — the height was measured imprecisely, try another --pad`);
     process.exit(1);
   }
 }

@@ -97,10 +97,10 @@ function parseBlocks(text) {
 
 function validate(blocks) {
   const problems = [];
-  if (!blocks.title) problems.push('немає секції Title');
-  if (!blocks.summary) problems.push('немає секції Summary');
-  if (blocks.skills.length === 0) problems.push('немає жодного рядка "Категорія: елементи" в Skills');
-  if (blocks.title.includes('\n') || blocks.title.length > 80) problems.push('Title має бути одним коротким рядком');
+  if (!blocks.title) problems.push('no Title section');
+  if (!blocks.summary) problems.push('no Summary section');
+  if (blocks.skills.length === 0) problems.push('no "Category: items" line in Skills');
+  if (blocks.title.includes('\n') || blocks.title.length > 80) problems.push('Title must be one short line');
   return problems;
 }
 
@@ -132,18 +132,18 @@ function fill(base, blocks) {
 
   for (const key of ['title', 'summary']) {
     const token = PLACEHOLDERS[key];
-    if (!html.includes(token)) throw new Error(`у базі немає плейсхолдера ${token}`);
+    if (!html.includes(token)) throw new Error(`the base has no placeholder ${token}`);
     html = html.replace(token, escapeHtml(blocks[key]));
   }
 
   const at = html.indexOf(PLACEHOLDERS.skills);
-  if (at === -1) throw new Error(`у базі немає плейсхолдера ${PLACEHOLDERS.skills}`);
+  if (at === -1) throw new Error(`the base has no placeholder ${PLACEHOLDERS.skills}`);
   const paragraph = paragraphAround(html, at);
-  if (!paragraph) throw new Error(`плейсхолдер ${PLACEHOLDERS.skills} не всередині <p>`);
+  if (!paragraph) throw new Error(`placeholder ${PLACEHOLDERS.skills} is not inside a <p>`);
   html = html.slice(0, paragraph.start) + renderSkills(blocks.skills) + html.slice(paragraph.end);
 
   const left = html.match(/\[[^\]]*placeholder[^\]]*\]/gi);
-  if (left) throw new Error(`у результаті лишились плейсхолдери: ${[...new Set(left)].join(', ')}`);
+  if (left) throw new Error(`placeholders left in the result: ${[...new Set(left)].join(', ')}`);
 
   return html;
 }
@@ -186,14 +186,14 @@ function outputPath(blocks, flags) {
 
 // ─────────────────────────────────────────── main
 
-const USAGE = `Використання:
-  node render.mjs blocks.md                    блоки з файлу (або "-" / stdin)
-  node render.mjs blocks.md --company="Acme"   → out/Acme-<Посада>/${CV_NAME}.html
-  node render.mjs blocks.md --out=cv.html      свій шлях; --out=- друкує html у stdout
-  node render.mjs placeholders                 показати плейсхолдери базового резюме
-Прапорці: --base=<шлях> --force
+const USAGE = `Usage:
+  node render.mjs blocks.md                    blocks from a file (or "-" / stdin)
+  node render.mjs blocks.md --company="Acme"   → out/Acme-<Position>/${CV_NAME}.html
+  node render.mjs blocks.md --out=cv.html      custom path; --out=- prints the html to stdout
+  node render.mjs placeholders                 show the placeholders of the base resume
+Flags: --base=<path> --force
 
-Формат файлу блоків — вивід скіла resume-blocks як є:
+Blocks file format — the resume-blocks skill output as is:
   **Title:** Senior Frontend Developer
   **Summary:** ...
   **Skills:**
@@ -216,9 +216,9 @@ function main(argv) {
     const found = base.match(/\[[^\]]*placeholder[^\]]*\]/gi) ?? [];
     const known = new Set(Object.values(PLACEHOLDERS));
     console.log(`${relative(ROOT, basePath)}:`);
-    for (const p of found) console.log(`  ${p}${known.has(p) ? '' : '  ← скрипт його не заповнює'}`);
+    for (const p of found) console.log(`  ${p}${known.has(p) ? '' : '  ← the script does not fill it'}`);
     for (const [key, token] of Object.entries(PLACEHOLDERS)) {
-      if (!found.includes(token)) console.log(`  ВІДСУТНІЙ ${token} (секція ${key})`);
+      if (!found.includes(token)) console.log(`  MISSING ${token} (section ${key})`);
     }
     return;
   }
@@ -229,7 +229,7 @@ function main(argv) {
 
   const problems = validate(blocks);
   if (problems.length) {
-    console.error(`Блоки прочитані неповністю:\n${problems.map((p) => `- ${p}`).join('\n')}\n\n${USAGE}`);
+    console.error(`Blocks were read incompletely:\n${problems.map((p) => `- ${p}`).join('\n')}\n\n${USAGE}`);
     process.exit(2);
   }
 
@@ -238,7 +238,7 @@ function main(argv) {
 
   if (target === '-') { process.stdout.write(html); return; }
   if (existsSync(target) && !flags.has('force')) {
-    console.error(`${relative(ROOT, target)} вже існує — додай --force, щоб перезаписати`);
+    console.error(`${relative(ROOT, target)} already exists — add --force to overwrite`);
     process.exit(1);
   }
   mkdirSync(dirname(target), { recursive: true });
@@ -246,8 +246,8 @@ function main(argv) {
 
   console.log(`${relative(ROOT, target)}`);
   console.log(`  Title:   ${blocks.title}`);
-  console.log(`  Summary: ${blocks.summary.split(' ').length} слів`);
-  console.log(`  Skills:  ${blocks.skills.length} рядків, ${blocks.skills.reduce((n, s) => n + s.items.split(',').length, 0)} елементів`);
+  console.log(`  Summary: ${blocks.summary.split(' ').length} words`);
+  console.log(`  Skills:  ${blocks.skills.length} lines, ${blocks.skills.reduce((n, s) => n + s.items.split(',').length, 0)} items`);
 }
 
 main(process.argv);
