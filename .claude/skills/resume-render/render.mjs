@@ -4,7 +4,7 @@
  * на блоки Title / Summary / Skills. Нічого не вирішує і не редагує текст —
  * лише вставляє те, що йому дали, і слідкує, щоб жоден плейсхолдер не лишився.
  *
- *   node render.mjs blocks.md                     — → out/<Посада>/!Jane_Doe_CV.html
+ *   node render.mjs blocks.md                     — → out/<Посада>/<resumeFileName>.html
  *   node render.mjs blocks.md --company="Acme"    — компанія в імені папки вакансії
  *   node render.mjs blocks.md --out=cv.html       — свій шлях (- = у stdout)
  *   node render.mjs placeholders                  — які плейсхолдери є в базі
@@ -162,9 +162,18 @@ const slug = (s) => s
  * Файл завжди називається однаково — це те, що побачить рекрутер у себе в завантаженнях.
  * "!" на початку тримає його вгорі списку у Finder.
  */
-const CV_NAME = '!Jane_Doe_CV';
+const CONFIG_PATH = resolve(ROOT, 'resume-config.json');
+const DEFAULT_CV_NAME = 'CV';
 
-/** out/<Компанія>-<Посада>/!Jane_Doe_CV.html — вакансія в папці, не в імені файлу. */
+function readCvName() {
+  if (!existsSync(CONFIG_PATH)) return DEFAULT_CV_NAME;
+  const { resumeFileName } = JSON.parse(readFileSync(CONFIG_PATH, 'utf8'));
+  return resumeFileName ? resumeFileName.replace(/\.pdf$/i, '') : DEFAULT_CV_NAME;
+}
+
+const CV_NAME = readCvName();
+
+/** out/<Компанія>-<Посада>/<resumeFileName>.html — вакансія в папці, не в імені файлу. */
 function outputPath(blocks, flags) {
   if (flags.has('out')) {
     const value = flags.get('out');
