@@ -6,6 +6,7 @@
 ## Запуск
 
 ```bash
+cd skills-rating
 npm install   # один раз
 npm run dev   # → http://localhost:5173
 ```
@@ -37,14 +38,17 @@ npm run dev   # → http://localhost:5173
 
 ## Структура
 
-- `server/skillsApi.ts` — Vite-плагін з `GET`/`PUT /api/skills` (читання та запис CSV).
-- `src/lib/csv.ts` — парсер і серіалізатор CSV зі збереженням формату файлу.
-- `src/hooks/useSkills.ts` — стан, автозбереження, обробка конфліктів.
-- `src/components/` — тулбар, картка секції, рядок скіла, контрол оцінки.
+Застосунок живе в `skills-rating/`.
+
+- `skills-rating/server/skillsApi.ts` — Vite-плагін з `GET`/`PUT /api/skills` (читання та запис CSV).
+- `skills-rating/src/lib/csv.ts` — парсер і серіалізатор CSV зі збереженням формату файлу.
+- `skills-rating/src/hooks/useSkills.ts` — стан, автозбереження, обробка конфліктів.
+- `skills-rating/src/components/` — тулбар, картка секції, рядок скіла, контрол оцінки.
 
 Шлях до CSV можна перевизначити змінною `SKILLS_CSV` (зручно для експериментів на копії):
 
 ```bash
+cd skills-rating
 SKILLS_CSV=/tmp/test.csv npm run dev
 ```
 
