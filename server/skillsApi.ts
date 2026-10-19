@@ -1,3 +1,4 @@
+import { existsSync, realpathSync } from 'node:fs';
 import { copyFile, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -151,10 +152,11 @@ export function skillsApi(): Plugin {
     name: 'skills-csv-api',
     configResolved(config) {
       const override = process.env['SKILLS_CSV'];
-      csvPath =
+      const configured =
         override !== undefined && override !== ''
           ? path.resolve(config.root, override)
           : path.resolve(config.root, 'skills.csv');
+      csvPath = existsSync(configured) ? realpathSync(configured) : configured;
     },
     configureServer(server) {
       server.middlewares.use(middleware);

@@ -2,6 +2,16 @@ node_modules/
 dist/
 *.tsbuildinfo
 
+# особисті дані живуть в окремому приватному репо (../my-career-profile-data);
+# тут лише симлінки на них — ніколи не комітити
+/skills.csv
+/skills.json
+/skills.md
+/CV_Base.html
+/*.pdf
+/out
+/.data-dir
+
 # згенеровані резюме
 out/
 
@@ -11,5 +21,6 @@ skills.csv.tmp
 
 # секрети для скриптів (session cookie тощо) — ніколи не комітити
 .claude/skills/organize-by-status/.env.local
+**/.env.local
 
 .DS_Store
