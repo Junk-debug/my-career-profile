@@ -1,67 +1,50 @@
-# Skills rating — локальний застосунок
+# Career profile — resume tailoring
 
-Локальний сайт для оцінки скілів від 0 до 5. Джерело даних і місце збереження — `skills.csv`
-у корені репозиторію. Ніякої бази, ніякого хмарного сховища: усе пишеться прямо у файл.
+Agent skills that tailor a resume to one specific job posting without inventing anything. The
+source of truth is `skills.csv`: every skill rated 0–5. The agent rewrites only the top of the
+resume — Title, Summary and the Skills block — and only claims what the ratings back. Contacts,
+experience and education are copied from the base resume as they are.
 
-## Запуск
+The pipeline is four separate skills, each doing one job:
 
-```bash
-cd skills-rating
-npm install   # один раз
-npm run dev   # → http://localhost:5173
+1. `resume-blocks` — the agent reads the vacancy and writes the Title, Summary and Skills blocks.
+2. `resume-render` — puts the blocks into a copy of `CV_Base.html`.
+3. `resume-pdf` — prints the html to a PDF that is one long page.
+4. `organize-by-status` — sorts the vacancy folders in `out/` by their onetap status.
+
+Next to them, `skills-rating/` is a small local app for rating the skills in `skills.csv`.
+
+## Repository layout
+
+```text
+.claude/skills/        the four skills above
+skills-rating/         the rating app (Vite + React)
+templates/data-repo/   skeleton of the private data repo
+skills.csv             ┐
+CV_Base.html           │ git-ignored symlinks into the private data repo
+resume-config.json     │
+out/                   ┘
 ```
 
-## Як користуватись
+## Personal data
 
-- Клік по зірках — оцінка 1–5, кнопка `0` — нуль, повторний клік по тій самій оцінці — скинути.
-- Клавіші на рядку (рядок отримує фокус кліком або <kbd>Tab</kbd>):
-  - <kbd>0</kbd>–<kbd>5</kbd> — оцінка
-  - <kbd>Backspace</kbd> — прибрати оцінку
-  - <kbd>S</kbd> — перемкнути «вже бачив»
-  - <kbd>↑</kbd> / <kbd>↓</kbd> — перехід між скілами
-- Фільтри: пошук, оцінки (включно з «без оцінки»), «вже бачив», сортування
-  (сортування лише візуальне — порядок рядків у CSV не змінюється).
-- Форма внизу списку додає новий скіл, `✕` на рядку — видаляє.
-- Зміни зберігаються автоматично (debounce 400 мс); статус видно вгорі праворуч.
+Code and data are separate. `skills.csv`, `CV_Base.html`, `resume-config.json` and `out/` live in a
+separate private repository, `../my-career-profile-data`; the root of this repository holds only
+git-ignored symlinks to them, so every path below works as before. How to create your own data
+repository — `templates/data-repo/README.md`.
 
-## Робота з файлом
+## Resume blocks for a vacancy
 
-- Формат `skills.csv` зберігається як є: ті самі колонки й порядок, той самий розділювач
-  рядків (зараз CRLF). Незмінені рядки лишаються байт-у-байт.
-- Підтримуються обидві схеми: `skill,rating,already_seen` і варіант з колонкою `section`
-  (тоді з'являється сайдбар із секціями). Невідомі застосунку колонки зберігаються без змін.
-- Порожня клітинка `rating` = «ще не оцінено» (у застосунку — «без оцінки»).
-- Запис атомарний (`skills.csv.tmp` → `rename`), перед першим записом створюється
-  `skills.csv.bak`.
-- Якщо файл змінили в редакторі, поки відкрита сторінка, застосунок не затре правки:
-  покаже конфлікт і запропонує перечитати файл.
+`.claude/skills/resume-blocks/` — a skill for the agent: writes the Title, Summary and Skills
+blocks for one specific vacancy from the ratings in `skills.csv`.
 
-## Структура
-
-Застосунок живе в `skills-rating/`.
-
-- `skills-rating/server/skillsApi.ts` — Vite-плагін з `GET`/`PUT /api/skills` (читання та запис CSV).
-- `skills-rating/src/lib/csv.ts` — парсер і серіалізатор CSV зі збереженням формату файлу.
-- `skills-rating/src/hooks/useSkills.ts` — стан, автозбереження, обробка конфліктів.
-- `skills-rating/src/components/` — тулбар, картка секції, рядок скіла, контрол оцінки.
-
-Шлях до CSV можна перевизначити змінною `SKILLS_CSV` (зручно для експериментів на копії):
-
-```bash
-cd skills-rating
-SKILLS_CSV=/tmp/test.csv npm run dev
-```
-
-## Блоки резюме під вакансію
-
-`.claude/skills/resume-blocks/` — скіл для агента: генерація блоків Title, Summary і Skills
-під конкретну вакансію на основі оцінок зі `skills.csv`.
-
-- `SKILL.md` — правила: як чистити заголовок вакансії, як будувати summary, як групувати блок
-  скілів і в якому порядку, які оцінки дозволяють згадувати скіл (4–5 вільно, 3 в прозі лише
-  з хеджем, 2 — тільки в хвості рядка блоку скілів і лише на вимогу вакансії, ≤1 — ніколи).
-- `skills.mjs` — довідник по базі. Вакансію аналізує агент; скрипт лише відповідає, яка
-  оцінка в терміна, чи є він у базі і чи все потрібне потрапило в блок скілів:
+- `SKILL.md` — the rules: how to clean the vacancy title, how to build the summary, how to group
+  the skills block and in what order, which ratings allow a skill to be mentioned (4–5 freely, 3 in
+  prose only with a hedge, 2 — only at the tail of a skills block line and only when the vacancy
+  asks for it, ≤1 — never).
+- `skills.mjs` — a lookup over the base. The agent analyses the vacancy; the script only answers
+  what a term is rated, whether it is in the base, and whether everything needed made it into the
+  skills block:
 
 ```bash
 node .claude/skills/resume-blocks/skills.mjs rate "React" "Next.js" "Rust"
@@ -70,71 +53,120 @@ node .claude/skills/resume-blocks/skills.mjs list --min=4 --grep=test
 node .claude/skills/resume-blocks/skills.mjs check draft.txt "React" "Kubernetes"
 ```
 
-`check` бере чернетку блоку скілів і терміни вакансії й показує: що забуто (оцінка ≥3, але немає
-в блоці), що просочилось (оцінка ≤1 або слабке без запиту вакансії), що стоїть не в тому місці
-(оцінка 2 має бути в кінці свого рядка) і що можна ще додати (оцінка 2 з вакансії). Код виходу 1,
-якщо є до чого причепитись.
+`check` takes a skills block draft and the vacancy terms and shows what was forgotten (rated ≥3 but
+not in the block), what leaked in (rated ≤1, or weak without the vacancy asking for it), what is in
+the wrong place (rating 2 must be at the end of its line) and what could still be added (rating 2
+from the vacancy). Exit code 1 if there is anything to fix.
 
-Стаж у роках ніде не зашитий: агент читає секцію `EXPERIENCE` у `CV_Base.html` і бере рік початку
-найранішої ролі, яка справді є комерційною розробкою.
+Years of experience are not hardcoded anywhere: the agent reads the `EXPERIENCE` section of
+`CV_Base.html` and takes the start year of the earliest role that really is commercial
+development.
 
-Скіл `skills.csv` і `CV_Base.html` не змінює — тільки читає.
+The skill never changes `skills.csv` or `CV_Base.html` — it only reads them.
 
-## Складання резюме під вакансію
+## Assembling the resume for a vacancy
 
-`.claude/skills/resume-render/` — окрема система: нічого не пише сама, лише вставляє готові блоки
-в копію `CV_Base.html` замість плейсхолдерів `[Position placeholder]`, `[Summary placeholder]`,
-`[skills placeholder]`. Решта резюме (контакти, досвід, освіта, open source) копіюється як є.
+`.claude/skills/resume-render/` — a separate system: it writes nothing itself, it only puts
+finished blocks into a copy of `CV_Base.html` in place of the `[Position placeholder]`,
+`[Summary placeholder]` and `[skills placeholder]` placeholders. The rest of the resume (contacts,
+experience, education, open source) is copied as is.
 
 ```bash
 node .claude/skills/resume-render/render.mjs blocks.md --company="Acme"
-node .claude/skills/resume-render/render.mjs blocks.md --out=cv.html   # "-" = у stdout
-node .claude/skills/resume-render/render.mjs placeholders              # що оголошує база
+node .claude/skills/resume-render/render.mjs blocks.md --out=cv.html   # "-" = stdout
+node .claude/skills/resume-render/render.mjs placeholders              # what the base declares
 ```
 
-`blocks.md` — вивід скіла `resume-blocks` як є (секції `Title`, `Summary`, `Skills`; коментарі
-після блоку скілів ігноруються). Перезапис наявного файлу — лише з `--force`.
+`blocks.md` is the `resume-blocks` skill output as is (`Title`, `Summary`, `Skills` sections;
+comments after the skills block are ignored). Overwriting an existing file needs `--force`.
 
-Одна вакансія — одна папка `out/<Компанія>-<Посада>/`, файл усередині завжди називається однаково:
+One vacancy — one folder `out/<Company>-<Position>/`, and the file inside always has the same name:
 
 ```text
 out/Acme-Senior-Frontend-Developer/<resumeFileName>.html
 out/Acme-Senior-Frontend-Developer/<resumeFileName>.pdf
 ```
 
-Ім'я файлу береться з `resumeFileName` у `resume-config.json` (без `.pdf`; без конфігу — `CV`) —
-це те, що рекрутер побачить у себе в завантаженнях, тож компанія лишається в папці;
-`!` на початку тримає файл угорі списку у Finder. Ім'я може починатися з `!`, тож шлях у терміналі
-бери в одинарні лапки — в інтерактивному zsh подвійні лапки не рятують від history expansion.
+The file name comes from `resumeFileName` in `resume-config.json` (without `.pdf`; `CV` without the
+config) — it is what a recruiter sees in their downloads, so the company stays in the folder; a
+leading `!` keeps the file at the top of a Finder listing. The name may start with `!`, so quote the
+path in single quotes in a terminal — in an interactive zsh double quotes do not stop history
+expansion.
 
-`CV_Base.html` скрипт лише читає — базове резюме редагує тільки користувач.
+The script only reads `CV_Base.html` — only the user edits the base resume.
 
-## PDF однією довгою сторінкою
+## A PDF as one long page
 
-`.claude/skills/resume-pdf/` — ще одна окрема система: html → pdf, де висота паперу дорівнює
-висоті контенту, тож у файлі рівно одна сторінка й жодного розриву посеред тексту.
+`.claude/skills/resume-pdf/` — one more separate system: html → pdf where the paper height equals
+the content height, so the file has exactly one page and no break in the middle of the text.
 
 ```bash
 node .claude/skills/resume-pdf/topdf.mjs 'out/Acme-Senior-FE/<resumeFileName>.html'
-node .claude/skills/resume-pdf/topdf.mjs cv.html --side=14   # бокові поля, мм
-node .claude/skills/resume-pdf/topdf.mjs browsers            # який Chromium буде використано
+node .claude/skills/resume-pdf/topdf.mjs cv.html --side=14   # side margins, mm
+node .claude/skills/resume-pdf/topdf.mjs browsers            # which Chromium will be used
 ```
 
-Прапорці: `--out=`, `--width=` (мм, типово 210), `--pad=` (нижній відступ, мм, типово 8),
-`--side=` (бокові поля, мм), `--scale=`, `--browser=` (або `CHROME_PATH`), `--force`.
+Flags: `--out=`, `--width=` (mm, default 210), `--pad=` (bottom padding, mm, default 8),
+`--side=` (side margins, mm), `--scale=`, `--browser=` (or `CHROME_PATH`), `--force`.
 
-Бокові поля задає сам html: експорт Google Docs дає `body` з `padding: 9pt 57.6pt` (20.3 мм
-з боків) і `max-width: 480.1pt`. `--side` перекриває це вже в браузері, під час друку — файл
-лишається недоторканим. Текст при цьому перетікає, тож сторінка стає коротшою; висота міряється
-після підміни, тому одна сторінка гарантована й далі.
+The side margins come from the html itself: the Google Docs export gives `body` a
+`padding: 9pt 57.6pt` (20.3 mm on each side) and a `max-width: 480.1pt`. `--side` overrides that in
+the browser while printing — the file stays untouched. The text reflows, so the page gets shorter;
+the height is measured after the override, so one page is still guaranteed.
 
-Залежностей немає: скрипт керує headless-Chromium по DevTools-протоколу через вбудований у Node
-`WebSocket`. Браузер шукає сам — кеш Playwright/Puppeteer, потім Chrome, Chromium, Edge, Brave,
-Arc. Після друку рахує сторінки в готовому PDF і падає з помилкою, якщо їх більше однієї.
+No dependencies: the script drives headless Chromium over the DevTools protocol through Node's
+built-in `WebSocket`. It finds a browser by itself — the Playwright/Puppeteer cache, then Chrome,
+Chromium, Edge, Brave, Arc. After printing it counts the pages in the finished PDF and fails if
+there is more than one.
 
-## Особисті дані
+## Skills rating app
 
-Код і дані розділені. `skills.csv`, `CV_Base.html` і `out/` живуть в окремому приватному
-репозиторії `../my-career-profile-data`, а в корені цього репозиторію лише git-ignored симлінки
-на них — тож усі шляхи вище працюють як і раніше. Як створити свій репозиторій даних —
-`templates/data-repo/README.md`.
+A local site for rating skills from 0 to 5. The data source and the place it saves to is
+`skills.csv` (the repo-root symlink). No database, no cloud storage: everything is written straight
+to the file.
+
+```bash
+cd skills-rating
+npm install   # once
+npm run dev   # → http://localhost:5173
+```
+
+### Using it
+
+- Click the stars to rate 1–5, the `0` button for zero, click the same rating again to clear it.
+- Keys on a row (a row gets focus on click or <kbd>Tab</kbd>):
+  - <kbd>0</kbd>–<kbd>5</kbd> — rate
+  - <kbd>Backspace</kbd> — clear the rating
+  - <kbd>S</kbd> — toggle “seen”
+  - <kbd>↑</kbd> / <kbd>↓</kbd> — move between skills
+- Filters: search, ratings (including “unrated”), “seen”, sorting (sorting is visual only — the row
+  order in the CSV never changes).
+- The form at the bottom of the list adds a new skill, `✕` on a row deletes it.
+- Changes save automatically (400 ms debounce); the status is shown at the top right.
+
+### The file
+
+- The `skills.csv` format is kept as is: the same columns and order, the same line separator.
+  Unchanged rows stay byte-for-byte.
+- Both layouts are supported: `skill,rating,already_seen` and a variant with a `section` column
+  (then a sidebar with sections appears). Columns the app does not know are kept unchanged.
+- An empty `rating` cell means “not rated yet” (“unrated” in the app).
+- Writes are atomic (`skills.csv.tmp` → `rename`, on the real path behind the symlink); a
+  `skills.csv.bak` is created before the first write.
+- If the file is changed in an editor while the page is open, the app will not overwrite the edits:
+  it shows a conflict and offers to reload the file.
+
+### Structure
+
+- `skills-rating/server/skillsApi.ts` — a Vite plugin with `GET`/`PUT /api/skills` (reading and
+  writing the CSV).
+- `skills-rating/src/lib/csv.ts` — a CSV parser and serializer that keeps the file format.
+- `skills-rating/src/hooks/useSkills.ts` — state, autosave, conflict handling.
+- `skills-rating/src/components/` — toolbar, section card, skill row, rating control.
+
+The CSV path can be overridden with the `SKILLS_CSV` variable (handy for experiments on a copy):
+
+```bash
+cd skills-rating
+SKILLS_CSV=/tmp/test.csv npm run dev
+```
