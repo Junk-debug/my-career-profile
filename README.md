@@ -126,3 +126,10 @@ node .claude/skills/resume-pdf/topdf.mjs browsers            # який Chromium
 Залежностей немає: скрипт керує headless-Chromium по DevTools-протоколу через вбудований у Node
 `WebSocket`. Браузер шукає сам — кеш Playwright/Puppeteer, потім Chrome, Chromium, Edge, Brave,
 Arc. Після друку рахує сторінки в готовому PDF і падає з помилкою, якщо їх більше однієї.
+
+## Особисті дані
+
+Код і дані розділені. `skills.csv`, `CV_Base.html` і `out/` живуть в окремому приватному
+репозиторії `../my-career-profile-data`, а в корені цього репозиторію лише git-ignored симлінки
+на них — тож усі шляхи вище працюють як і раніше. Як створити свій репозиторій даних —
+`templates/data-repo/README.md`.
