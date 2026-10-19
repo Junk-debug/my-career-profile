@@ -1,6 +1,6 @@
 import { isRating, type Rating, type SkillRecord } from './types';
 
-/** RFC 4180 парсер: підтримує лапки, екрановані `""`, коми й переноси всередині полів. */
+/** RFC 4180 parser: supports quotes, escaped `""`, and commas and line breaks inside fields. */
 export function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
@@ -42,7 +42,7 @@ export function parseCsv(text: string): string[][] {
     } else if (char === ',') {
       endField();
     } else if (char === '\r') {
-      if (text[i + 1] !== '\n') endRow(); // самотній \r теж завершує рядок
+      if (text[i + 1] !== '\n') endRow(); // a lone \r also ends a row
     } else if (char === '\n') {
       endRow();
     } else {
@@ -61,13 +61,13 @@ function escapeCsvField(value: string): string {
 }
 
 /**
- * Опис формату конкретного файлу: які колонки, у якому порядку, чим розділені рядки.
- * Потрібен, щоб запис повертав файл у точно тому ж вигляді, у якому його прочитали.
+ * The format of one particular file: which columns, in what order, and the line separator.
+ * Needed so a write returns the file in exactly the shape it was read in.
  */
 export interface CsvFormat {
-  /** Заголовки колонок у порядку файлу (напр. ['skill','rating','already_seen']). */
+  /** Column headers in file order (e.g. ['skill','rating','already_seen']). */
   headers: string[];
-  /** Чи був рядок заголовка у файлі. */
+  /** Whether the file had a header row. */
   hasHeader: boolean;
   eol: '\n' | '\r\n';
   trailingNewline: boolean;
@@ -117,7 +117,7 @@ function detectEol(text: string): '\n' | '\r\n' {
   return text.includes('\r\n') ? '\r\n' : '\n';
 }
 
-/** Читає skills.csv, зберігаючи його формат для подальшого запису. */
+/** Reads skills.csv, keeping its format for the write back. */
 export function parseSkillsFile(text: string): SkillsFile {
   const rows = parseCsv(text);
   const first = rows[0] ?? [];
@@ -165,7 +165,7 @@ export function parseSkillsFile(text: string): SkillsFile {
   return { format, skills };
 }
 
-/** Записує скіли назад у тому ж форматі: ті самі колонки, порядок і розділювач рядків. */
+/** Writes the skills back in the same format: same columns, order and line separator. */
 export function serializeSkillsFile(file: SkillsFile): string {
   const { format, skills } = file;
   const columns = mapColumns(format.headers);

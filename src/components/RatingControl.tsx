@@ -21,12 +21,12 @@ export function RatingControl({ value, onChange }: RatingControlProps): React.JS
         onClick={() => onChange(value === 0 ? null : 0)}
         onMouseEnter={() => setHover(0)}
         aria-pressed={value === 0}
-        title="Нуль — зовсім не знаю"
+        title="Zero — do not know it at all"
       >
         0
       </button>
 
-      <div className="rating__stars" role="group" aria-label="Оцінка від 1 до 5">
+      <div className="rating__stars" role="group" aria-label="Rating from 1 to 5">
         {STARS.map((star) => (
           <button
             key={star}
@@ -36,7 +36,7 @@ export function RatingControl({ value, onChange }: RatingControlProps): React.JS
             }`}
             onClick={() => onChange(value === star ? null : star)}
             onMouseEnter={() => setHover(star)}
-            aria-label={`${star} з 5`}
+            aria-label={`${star} of 5`}
             aria-pressed={value === star}
           >
             ★

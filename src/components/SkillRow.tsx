@@ -10,7 +10,7 @@ interface SkillRowProps {
   onRemove: () => void;
 }
 
-/** Переносить фокус на сусідній рядок — навігація стрілками без миші. */
+/** Moves focus to the neighboring row — arrow-key navigation without a mouse. */
 function focusSibling(current: HTMLElement, direction: 1 | -1): void {
   const rows = Array.from(document.querySelectorAll<HTMLElement>('[data-skill-row]'));
   const index = rows.indexOf(current);
@@ -71,9 +71,9 @@ export function SkillRow({ skill, onRate, onToggleSeen, onRemove }: SkillRowProp
           className={`chip chip--seen ${skill.seen ? 'is-on' : ''}`}
           onClick={onToggleSeen}
           aria-pressed={skill.seen}
-          title="Вже бачив цей скіл у вакансіях (клавіша S)"
+          title="Already seen this skill in job postings (key S)"
         >
-          вже бачив
+          seen
         </button>
       </div>
 
@@ -83,10 +83,10 @@ export function SkillRow({ skill, onRate, onToggleSeen, onRemove }: SkillRowProp
           type="button"
           className="skill__remove"
           onClick={() => {
-            if (window.confirm(`Видалити «${skill.name}» зі skills.csv?`)) onRemove();
+            if (window.confirm(`Delete "${skill.name}" from skills.csv?`)) onRemove();
           }}
-          title="Видалити скіл"
-          aria-label={`Видалити ${skill.name}`}
+          title="Delete skill"
+          aria-label={`Delete ${skill.name}`}
         >
           ✕
         </button>

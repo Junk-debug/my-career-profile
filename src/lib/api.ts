@@ -2,7 +2,7 @@ import type { SkillRecord } from './types';
 
 const ENDPOINT = '/api/skills';
 
-/** Файл змінили поза застосунком — потрібно перечитати, щоб не затерти чужі правки. */
+/** The file was changed outside the app — reload it so other edits are not overwritten. */
 export class ConflictError extends Error {}
 
 async function errorMessage(response: Response): Promise<string> {
@@ -12,7 +12,7 @@ async function errorMessage(response: Response): Promise<string> {
       return (body as { error: string }).error;
     }
   } catch {
-    // тіло не JSON — лишаємо статус
+    // the body is not JSON — keep the status
   }
   return `HTTP ${response.status}`;
 }

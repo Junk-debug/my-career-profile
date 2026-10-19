@@ -1,6 +1,6 @@
 import type { Skill } from './types';
 
-/** Стабільний якір для навігації сайдбаром. */
+/** Stable anchor for sidebar navigation. */
 export function sectionAnchorId(section: string): string {
   return `section-${encodeURIComponent(section).replaceAll('%', '_')}`;
 }
@@ -10,7 +10,7 @@ export interface SectionGroup {
   skills: Skill[];
 }
 
-/** Групує скіли, зберігаючи порядок секцій із CSV. */
+/** Groups skills, keeping the section order from the CSV. */
 export function groupBySection(skills: readonly Skill[]): SectionGroup[] {
   const groups = new Map<string, Skill[]>();
   for (const skill of skills) {

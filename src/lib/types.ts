@@ -1,19 +1,19 @@
-/** Оцінка скіла: 0–5, або `null` якщо ще не оцінено (порожня клітинка в CSV). */
+/** Skill rating: 0–5, or `null` if not rated yet (an empty cell in the CSV). */
 export type Rating = 0 | 1 | 2 | 3 | 4 | 5 | null;
 
-/** Один рядок skills.csv у нормалізованому вигляді. */
+/** One skills.csv row, normalized. */
 export interface SkillRecord {
   name: string;
   rating: Rating;
-  /** Колонка `already_seen`. */
+  /** The `already_seen` column. */
   seen: boolean;
-  /** Секція — лише якщо у файлі є така колонка; інакше порожній рядок. */
+  /** Section — only when the file has such a column; otherwise an empty string. */
   section: string;
-  /** Значення колонок, яких застосунок не знає, — щоб запис їх не втратив. */
+  /** Values of columns the app does not know, so a write does not drop them. */
   extra?: Record<string, string>;
 }
 
-/** Те саме, але зі стабільним ідентифікатором для React/фокуса. */
+/** The same, plus a stable id for React keys and focus. */
 export interface Skill extends SkillRecord {
   uid: string;
 }

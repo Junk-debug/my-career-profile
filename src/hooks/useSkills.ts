@@ -25,7 +25,7 @@ export interface UseSkillsResult {
   csvPath: string | null;
   loadError: string | null;
   saveState: SaveState;
-  /** Змінює один скіл; зміни автоматично летять у skills.csv. */
+  /** Updates one skill; changes are saved to skills.csv automatically. */
   updateSkill: (uid: string, patch: Partial<Omit<Skill, 'uid'>>) => void;
   addSkill: (name: string, section: string) => void;
   removeSkill: (uid: string) => void;
@@ -58,7 +58,7 @@ export function useSkills(): UseSkillsResult {
       setSaveState({ status: 'saved', at: Date.now() });
     } catch (error) {
       const conflict = error instanceof ConflictError;
-      // При конфлікті не повторюємо запис: чекаємо, поки користувач перечитає файл.
+      // On a conflict, do not retry the write: wait until the user reloads the file.
       if (conflict) pendingRef.current = null;
       setSaveState({
         status: 'error',
@@ -99,7 +99,7 @@ export function useSkills(): UseSkillsResult {
 
   useEffect(load, [load]);
 
-  // Не втрачаємо останні зміни, якщо вкладку закривають до спрацювання debounce.
+  // Do not lose the latest changes if the tab is closed before the debounce fires.
   useEffect(() => {
     const onHide = (): void => {
       if (pendingRef.current !== null) void flush();
@@ -108,7 +108,7 @@ export function useSkills(): UseSkillsResult {
     return () => window.removeEventListener('pagehide', onHide);
   }, [flush]);
 
-  // Зберігаємо в ефекті, а не в апдейтері стану: у StrictMode апдейтер викликається двічі.
+  // Save in an effect, not in the state updater: StrictMode calls the updater twice.
   useEffect(() => {
     if (skills === null || !dirtyRef.current) return;
     dirtyRef.current = false;
@@ -130,7 +130,7 @@ export function useSkills(): UseSkillsResult {
       mutate((current) => {
         const created: Skill = { uid: nextUid(), name: name.trim(), rating: null, seen: false, section };
         if (section === '') return [...current, created];
-        // Вставляємо в кінець своєї секції, щоб не ламати порядок у CSV.
+        // Insert at the end of its section so the CSV order stays intact.
         const lastIndex = current.map((s) => s.section).lastIndexOf(section);
         if (lastIndex === -1) return [...current, created];
         return [...current.slice(0, lastIndex + 1), created, ...current.slice(lastIndex + 1)];

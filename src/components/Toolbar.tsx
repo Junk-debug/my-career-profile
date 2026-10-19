@@ -30,37 +30,37 @@ interface ToolbarProps {
 }
 
 const SEEN_OPTIONS: readonly { key: SeenFilter; label: string }[] = [
-  { key: 'all', label: 'усі' },
-  { key: 'seen', label: 'вже бачив' },
-  { key: 'unseen', label: 'ще не бачив' },
+  { key: 'all', label: 'all' },
+  { key: 'seen', label: 'seen' },
+  { key: 'unseen', label: 'not seen' },
 ];
 
 const SORT_OPTIONS: readonly { key: SortMode; label: string }[] = [
-  { key: 'file', label: 'як у файлі' },
-  { key: 'unrated', label: 'спершу неоцінені' },
-  { key: 'name', label: 'за алфавітом' },
-  { key: 'rating', label: 'за оцінкою' },
+  { key: 'file', label: 'file order' },
+  { key: 'unrated', label: 'unrated first' },
+  { key: 'name', label: 'by name' },
+  { key: 'rating', label: 'by rating' },
 ];
 
 function SaveIndicator({ state, onReload }: { state: SaveState; onReload: () => void }): React.JSX.Element {
   switch (state.status) {
     case 'saving':
-      return <span className="save save--busy">Збереження…</span>;
+      return <span className="save save--busy">Saving…</span>;
     case 'saved':
-      return <span className="save save--ok">✓ Записано в skills.csv</span>;
+      return <span className="save save--ok">✓ Saved to skills.csv</span>;
     case 'error':
       return (
         <span className="save save--error">
           {state.message}
           {state.conflict && (
             <button type="button" className="chip" onClick={onReload}>
-              Перечитати файл
+              Reload file
             </button>
           )}
         </span>
       );
     default:
-      return <span className="save">Зміни пишуться в skills.csv автоматично</span>;
+      return <span className="save">Changes are saved to skills.csv automatically</span>;
   }
 }
 
@@ -87,10 +87,10 @@ export function Toolbar({
     <header className="toolbar">
       <div className="toolbar__top">
         <div>
-          <h1>Мої скіли</h1>
+          <h1>My skills</h1>
           <p className="toolbar__hint">
-            Клік по зірках — оцінка. На рядку працюють клавіші <kbd>0</kbd>–<kbd>5</kbd>, <kbd>S</kbd> — «вже
-            бачив», <kbd>Backspace</kbd> — прибрати оцінку, <kbd>↑</kbd>/<kbd>↓</kbd> — сусідній скіл.
+            Click the stars to rate. On a row, <kbd>0</kbd>–<kbd>5</kbd> rate, <kbd>S</kbd> toggles “seen”, <kbd>Backspace</kbd> clears
+            the rating, <kbd>↑</kbd>/<kbd>↓</kbd> move to the next skill.
             {csvPath !== null && <span className="toolbar__path"> · {csvPath}</span>}
           </p>
         </div>
@@ -102,15 +102,15 @@ export function Toolbar({
           <div className="progress__bar" style={{ width: `${progress}%` }} />
         </div>
         <span>
-          Оцінено <strong>{stats.rated}</strong> з <strong>{stats.total}</strong>
-          {stats.byRating.none > 0 && <> · без оцінки {stats.byRating.none}</>}
+          Rated <strong>{stats.rated}</strong> of <strong>{stats.total}</strong>
+          {stats.byRating.none > 0 && <> · unrated {stats.byRating.none}</>}
           {stats.average !== null && (
             <>
               {' '}
-              · середнє <strong>{stats.average.toFixed(2)}</strong>
+              · average <strong>{stats.average.toFixed(2)}</strong>
             </>
           )}
-          {visible !== stats.total && <> · показано {visible}</>}
+          {visible !== stats.total && <> · showing {visible}</>}
         </span>
       </div>
 
@@ -118,13 +118,13 @@ export function Toolbar({
         <input
           type="search"
           className="search"
-          placeholder="Пошук скіла…"
+          placeholder="Search skills…"
           value={filters.query}
           onChange={(event) => onChange({ ...filters, query: event.target.value })}
         />
 
         <label className="sort">
-          Сортування
+          Sort
           <select
             value={filters.sort}
             onChange={(event) => onChange({ ...filters, sort: event.target.value as SortMode })}
@@ -137,13 +137,13 @@ export function Toolbar({
           </select>
         </label>
 
-        <div className="chips" role="group" aria-label="Фільтр за оцінкою">
+        <div className="chips" role="group" aria-label="Filter by rating">
           <button
             type="button"
             className={`chip ${filters.ratings.has('none') ? 'is-on' : ''}`}
             onClick={() => toggleRating('none')}
           >
-            без оцінки <span className="chip__count">{stats.byRating.none}</span>
+            unrated <span className="chip__count">{stats.byRating.none}</span>
           </button>
           {RATING_VALUES.map((value) => {
             const key = String(value) as RatingKey;
@@ -160,7 +160,7 @@ export function Toolbar({
           })}
         </div>
 
-        <div className="chips" role="group" aria-label="Фільтр за «вже бачив»">
+        <div className="chips" role="group" aria-label="Filter by seen">
           {SEEN_OPTIONS.map((option) => (
             <button
               key={option.key}
@@ -179,7 +179,7 @@ export function Toolbar({
             className="chip chip--reset"
             onClick={() => onChange({ ...filters, query: '', ratings: new Set(), seen: 'all' })}
           >
-            Скинути фільтри
+            Reset filters
           </button>
         )}
       </div>

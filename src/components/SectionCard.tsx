@@ -5,7 +5,7 @@ import { sectionAnchorId } from '../lib/sections';
 import type { Rating, Skill } from '../lib/types';
 
 interface SectionCardProps {
-  /** Назва секції або `null`, якщо у файлі немає колонки з секціями. */
+  /** Section name, or `null` if the file has no section column. */
   title: string | null;
   section: string;
   skills: Skill[];
@@ -45,9 +45,9 @@ export function SectionCard({
         <header className="card__head">
           <h2>{title}</h2>
           <span className="card__meta">
-            {skills.length} шт.
-            {average !== null && <> · середнє {average.toFixed(1)}</>}
-            {hiddenCount > 0 && <> · {hiddenCount} приховано</>}
+            {skills.length} skills
+            {average !== null && <> · average {average.toFixed(1)}</>}
+            {hiddenCount > 0 && <> · {hiddenCount} hidden</>}
           </span>
         </header>
       )}
@@ -68,11 +68,11 @@ export function SectionCard({
         <input
           type="text"
           value={draft}
-          placeholder={title === null ? 'Додати новий скіл…' : `Додати скіл у «${title}»…`}
+          placeholder={title === null ? 'Add a new skill…' : `Add a skill to "${title}"…`}
           onChange={(event) => setDraft(event.target.value)}
         />
         <button type="submit" disabled={draft.trim() === ''}>
-          Додати
+          Add
         </button>
       </form>
     </section>

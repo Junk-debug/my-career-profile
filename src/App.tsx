@@ -37,7 +37,7 @@ function matches(skill: Skill, filters: Filters): boolean {
   return true;
 }
 
-/** Сортування лише візуальне — у CSV порядок рядків не змінюється. */
+/** Sorting is visual only — the row order in the CSV never changes. */
 function sortSkills(skills: Skill[], mode: SortMode): Skill[] {
   if (mode === 'file') return skills;
   const sorted = [...skills];
@@ -93,16 +93,16 @@ export default function App(): React.JSX.Element {
   if (loadError !== null) {
     return (
       <div className="state state--error">
-        <h1>Не вдалося прочитати skills.csv</h1>
+        <h1>Could not read skills.csv</h1>
         <p>{loadError}</p>
         <button type="button" className="chip" onClick={reload}>
-          Спробувати ще раз
+          Try again
         </button>
       </div>
     );
   }
 
-  if (skills === null) return <div className="state">Завантаження skills.csv…</div>;
+  if (skills === null) return <div className="state">Loading skills.csv…</div>;
 
   return (
     <div className={`layout ${hasSections ? '' : 'layout--flat'}`}>
@@ -120,7 +120,7 @@ export default function App(): React.JSX.Element {
         />
 
         {visibleCount === 0 ? (
-          <div className="state state--empty">Нічого не знайдено за поточними фільтрами.</div>
+          <div className="state state--empty">Nothing matches the current filters.</div>
         ) : (
           visibleGroups
             .filter((group) => group.visible.length > 0)

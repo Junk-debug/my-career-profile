@@ -6,8 +6,8 @@ interface SidebarProps {
 
 export function Sidebar({ groups }: SidebarProps): React.JSX.Element {
   return (
-    <nav className="sidebar" aria-label="Секції">
-      <div className="sidebar__title">Секції</div>
+    <nav className="sidebar" aria-label="Sections">
+      <div className="sidebar__title">Sections</div>
       <ul>
         {groups.map(({ section, skills }) => {
           const unrated = skills.filter((s) => s.rating === null).length;
@@ -17,7 +17,7 @@ export function Sidebar({ groups }: SidebarProps): React.JSX.Element {
                 <span className="sidebar__name">{section}</span>
                 <span className="sidebar__count">
                   {skills.length}
-                  {unrated > 0 && <em title={`${unrated} без оцінки`}> +{unrated}</em>}
+                  {unrated > 0 && <em title={`${unrated} unrated`}> +{unrated}</em>}
                 </span>
               </a>
             </li>
