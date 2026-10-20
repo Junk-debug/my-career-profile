@@ -128,7 +128,8 @@ is commercial software development**; the count is the current year minus that y
 
 The earliest entry is not automatically the right one. A CV also lists work from before the career
 started — hardware, support, sales, unrelated internships — and those years are dated just like the
-rest but do not count. If the CV has no EXPERIENCE dates at all, ask the user which year to count from.
+rest but do not count. If the CV has no EXPERIENCE dates at all, ask the user which year to count
+from.
 
 Lead sentence 1 with it **only when the posting's minimum is at or below** what that yields
 (`Software Engineer with N+ years of experience specializing in …`). It is the cheapest way to
