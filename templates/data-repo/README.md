@@ -60,6 +60,10 @@ experience out of the Summary. If you do open the code repository itself, grant 
 - A private remote or none at all. This holds contact details, work history and every resume
   sent to an employer.
 - No code here — scripts and skills belong in the code repository.
-- Put `[skills placeholder]` on a line of its own and format it the way the skill lines should look
-  (font, size, spacing). `resume-render` copies that line's formatting for every skill line, makes the
-  category bold and the items regular, so any Google Docs export works as is.
+- Put `[skills placeholder]` alone on a line of its own — a plain paragraph or a list item — and
+  format it the way the skill lines should look (font, size, spacing). `resume-render` copies that
+  whole line once per skill line and swaps only the placeholder text, with the category bold and the
+  items regular, so any Google Docs export works as is. Inside a table cell or next to other text it
+  refuses to run instead of guessing.
+- Type each placeholder in one go. Changing formatting in the middle of one splits it in the export;
+  `resume-render` then stops and says which placeholder to retype. Letter case does not matter.

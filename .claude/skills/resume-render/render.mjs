@@ -104,31 +104,69 @@ const escapeHtml = (s) => s
   .replace(/</g, '&lt;')
   .replace(/>/g, '&gt;');
 
-const withWeight = (spanOpen, weight) => (spanOpen.includes('style="')
-  ? spanOpen.replace('style="', `style="font-weight:${weight};`)
-  : spanOpen.replace(/>$/, ` style="font-weight:${weight}">`));
+const tokenPattern = (token) => new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+const stripTags = (html) => html.replace(/<[^>]*>/g, '');
+const plainText = (html) => stripTags(html).replace(/&nbsp;| /g, ' ').trim();
 
-/** Skills block lines in the markup of the placeholder's own paragraph and text run. */
-function renderSkills(skills, { pOpen, spanOpen }) {
+function locate(html, token) {
+  const at = html.search(tokenPattern(token));
+  if (at !== -1) return at;
+  if (tokenPattern(token).test(stripTags(html))) {
+    throw new Error(`${token} is split by formatting in the base — delete it and type it again in one go`);
+  }
+  throw new Error(`the base has no placeholder ${token}`);
+}
+
+const LINE_TAGS = ['p', 'li'];
+const STRUCTURE_TAGS = /<\/?(p|li|ul|ol|table|tbody|thead|tr|td|th|div|h[1-6])\b/i;
+
+function skillsLine(html, at, token) {
+  const opening = [...html.slice(0, at).matchAll(/<(p|li)(?:\s[^>]*)?>/gi)].at(-1);
+  const misplaced = new Error(`${token} must sit alone on its own line — a plain paragraph or a list item, not inside a table and not next to other text`);
+  if (!opening) throw misplaced;
+  const tag = opening[1].toLowerCase();
+  const closing = `</${tag}>`;
+  const close = html.toLowerCase().indexOf(closing, at);
+  if (close === -1) throw misplaced;
+  const start = opening.index;
+  const end = close + closing.length;
+  const line = html.slice(start, end);
+  const inner = line.slice(opening[0].length, line.length - closing.length);
+  if (STRUCTURE_TAGS.test(inner) || plainText(line).toLowerCase() !== token.toLowerCase()) throw misplaced;
+  return { start, end, line };
+}
+
+function renderSkills(skills, line, token) {
   return skills
-    .map(({ category, items }) => `${pOpen}${withWeight(spanOpen, 700)}${escapeHtml(category)}</span>`
-      + `${withWeight(spanOpen, 400)}: ${escapeHtml(items)}</span></p>`)
+    .map(({ category, items }) => line.replace(tokenPattern(token), () => `<span style="font-weight:700">${escapeHtml(category)}</span>`
+      + `<span style="font-weight:400">: ${escapeHtml(items)}</span>`))
     .join('');
 }
 
-function placeholderMarkup(html, paragraph, at) {
-  const pOpen = html.slice(paragraph.start, html.indexOf('>', paragraph.start) + 1);
-  const spanStart = html.lastIndexOf('<span', at);
-  const spanOpen = spanStart > paragraph.start ? html.slice(spanStart, html.indexOf('>', spanStart) + 1) : '<span>';
-  return { pOpen, spanOpen };
+function countTags(html) {
+  const counts = new Map();
+  for (const [, slash, name] of html.matchAll(/<(\/?)([a-z][a-z0-9]*)\b[^>]*>/gi)) {
+    const key = `${slash ? '/' : ''}${name.toLowerCase()}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return counts;
 }
 
-/** The paragraph the placeholder sits in (to replace the whole line, not just its text). */
-function paragraphAround(html, index) {
-  const start = html.lastIndexOf('<p', index);
-  const end = html.indexOf('</p>', index);
-  if (start === -1 || end === -1) return null;
-  return { start, end: end + '</p>'.length };
+function checkStructure(before, line, after, lines) {
+  const base = countTags(before);
+  const copy = countTags(line);
+  const result = countTags(after);
+  const keys = new Set([...base.keys(), ...copy.keys(), ...result.keys()]);
+  const problems = [];
+  for (const key of keys) {
+    const extraSpans = key === 'span' || key === '/span' ? 2 * lines : 0;
+    const expected = (base.get(key) ?? 0) + (lines - 1) * (copy.get(key) ?? 0) + extraSpans;
+    if ((result.get(key) ?? 0) !== expected) problems.push(`<${key}> ${result.get(key) ?? 0} instead of ${expected}`);
+  }
+  for (const tag of [...LINE_TAGS, 'span']) {
+    if ((result.get(tag) ?? 0) !== (result.get(`/${tag}`) ?? 0)) problems.push(`<${tag}> opened ${result.get(tag) ?? 0} times, closed ${result.get(`/${tag}`) ?? 0}`);
+  }
+  if (problems.length) throw new Error(`the assembled resume does not match the base's structure, nothing was written: ${problems.join('; ')}`);
 }
 
 function fill(base, blocks) {
@@ -136,21 +174,19 @@ function fill(base, blocks) {
 
   for (const key of ['title', 'summary']) {
     const token = PLACEHOLDERS[key];
-    if (!html.includes(token)) throw new Error(`the base has no placeholder ${token}`);
-    html = html.replace(token, escapeHtml(blocks[key]));
+    locate(html, token);
+    html = html.replace(tokenPattern(token), () => escapeHtml(blocks[key]));
   }
 
-  const at = html.indexOf(PLACEHOLDERS.skills);
-  if (at === -1) throw new Error(`the base has no placeholder ${PLACEHOLDERS.skills}`);
-  const paragraph = paragraphAround(html, at);
-  if (!paragraph) throw new Error(`placeholder ${PLACEHOLDERS.skills} is not inside a <p>`);
-  const markup = placeholderMarkup(html, paragraph, at);
-  html = html.slice(0, paragraph.start) + renderSkills(blocks.skills, markup) + html.slice(paragraph.end);
+  const token = PLACEHOLDERS.skills;
+  const { start, end, line } = skillsLine(html, locate(html, token), token);
+  const result = html.slice(0, start) + renderSkills(blocks.skills, line, token) + html.slice(end);
+  checkStructure(html, line, result, blocks.skills.length);
 
-  const left = html.match(/\[[^\]]*placeholder[^\]]*\]/gi);
+  const left = result.match(/\[[^\]]*placeholder[^\]]*\]/gi);
   if (left) throw new Error(`placeholders left in the result: ${[...new Set(left)].join(', ')}`);
 
-  return html;
+  return result;
 }
 
 // ─────────────────────────────────────────── file name
@@ -219,11 +255,13 @@ function main(argv) {
 
   if (positional[0] === 'placeholders') {
     const found = base.match(/\[[^\]]*placeholder[^\]]*\]/gi) ?? [];
-    const known = new Set(Object.values(PLACEHOLDERS));
+    const lower = (s) => s.toLowerCase();
+    const known = new Set(Object.values(PLACEHOLDERS).map(lower));
+    const foundLower = found.map(lower);
     console.log(`${relative(ROOT, basePath)}:`);
-    for (const p of found) console.log(`  ${p}${known.has(p) ? '' : '  ← the script does not fill it'}`);
+    for (const p of found) console.log(`  ${p}${known.has(lower(p)) ? '' : '  ← the script does not fill it'}`);
     for (const [key, token] of Object.entries(PLACEHOLDERS)) {
-      if (!found.includes(token)) console.log(`  MISSING ${token} (section ${key})`);
+      if (!foundLower.includes(lower(token))) console.log(`  MISSING ${token} (section ${key})`);
     }
     return;
   }
