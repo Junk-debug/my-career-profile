@@ -27,6 +27,7 @@ const WIDTH_MM = 210;
 const PAD_MM = 8;
 /** How long to wait for the browser, ms. */
 const TIMEOUT = 30_000;
+const EXIT_TIMEOUT = 3_000;
 
 const MM_PER_IN = 25.4;
 const PX_PER_IN = 96;
@@ -90,6 +91,7 @@ function launch(binary, profileDir) {
     '--disable-gpu',
     '--hide-scrollbars',
     '--disable-extensions',
+    '--use-mock-keychain',
     '--run-all-compositor-stages-before-draw',
     'about:blank',
   ], { stdio: ['ignore', 'ignore', 'pipe'] });
@@ -106,6 +108,15 @@ function launch(binary, profileDir) {
   });
 
   return { child, wsUrl };
+}
+
+function stopBrowser(child) {
+  if (child.exitCode !== null || child.signalCode !== null) return Promise.resolve();
+  return new Promise((ok) => {
+    const timer = setTimeout(ok, EXIT_TIMEOUT);
+    child.once('exit', () => { clearTimeout(timer); ok(); });
+    child.kill();
+  });
 }
 
 /** A WebSocket wrapper: send(method, params, sessionId) and waiting for events. */
@@ -138,21 +149,34 @@ async function connect(url) {
     }
   });
 
+  socket.addEventListener('close', () => {
+    for (const slot of pending.values()) slot.fail(new Error(`connection closed before ${slot.method} answered`));
+    pending.clear();
+  });
+
   const send = (method, params = {}, sessionId) => new Promise((ok, fail) => {
     const id = (nextId += 1);
-    pending.set(id, { ok, fail, method });
+    const timer = setTimeout(() => {
+      pending.delete(id);
+      fail(new Error(`no answer to ${method} within ${TIMEOUT} ms`));
+    }, TIMEOUT);
+    pending.set(id, {
+      ok: (result) => { clearTimeout(timer); ok(result); },
+      fail: (error) => { clearTimeout(timer); fail(error); },
+      method,
+    });
     socket.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }));
   });
 
   const once = (method, sessionId) => new Promise((ok, fail) => {
-    const waiter = { method, sessionId, ok };
-    waiters.push(waiter);
-    setTimeout(() => {
+    const waiter = { method, sessionId, ok: (params) => { clearTimeout(waiter.timer); ok(params); } };
+    waiter.timer = setTimeout(() => {
       if (waiters.includes(waiter)) {
         waiters.splice(waiters.indexOf(waiter), 1);
         fail(new Error(`timed out waiting for event ${method}`));
       }
     }, TIMEOUT);
+    waiters.push(waiter);
   });
 
   return { send, once, close: () => socket.close() };
@@ -243,8 +267,10 @@ async function renderPdf(htmlPath, { binary, widthMm, padMm, scale, sideMm }) {
   } finally {
     try { await cdp?.send('Browser.close'); } catch { /* the browser may already be gone */ }
     cdp?.close();
-    child.kill();
-    rmSync(profileDir, { recursive: true, force: true });
+    await stopBrowser(child);
+    try {
+      rmSync(profileDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    } catch {}
   }
 }
 
