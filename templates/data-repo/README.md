@@ -60,5 +60,6 @@ experience out of the Summary. If you do open the code repository itself, grant 
 - A private remote or none at all. This holds contact details, work history and every resume
   sent to an employer.
 - No code here — scripts and skills belong in the code repository.
-- The `c7 c4`, `c0` and `c14` classes in `CV_Base.html` must match the constants in the code
-  repository's `.claude/skills/resume-render/render.mjs`: Google Docs renumbers them on every export.
+- Put `[skills placeholder]` on a line of its own and format it the way the skill lines should look
+  (font, size, spacing). `resume-render` copies that line's formatting for every skill line, makes the
+  category bold and the items regular, so any Google Docs export works as is.

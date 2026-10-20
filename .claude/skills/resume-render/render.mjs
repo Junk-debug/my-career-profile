@@ -28,13 +28,6 @@ const PLACEHOLDERS = {
   skills: '[skills placeholder]',
 };
 
-/** Google Docs classes in the base: c7 c4 — bold 10.5pt, c0 — regular, c14 — skills line paragraph.
- *  Google Docs renumbers them on every re-export — after replacing
- *  CV_Base.html, check these three values against the new CSS. */
-const BOLD = 'c7 c4';
-const PLAIN = 'c0';
-const LINE = 'c14';
-
 // ─────────────────────────────────────────── parsing blocks
 
 const SECTIONS = ['title', 'summary', 'skills'];
@@ -111,12 +104,23 @@ const escapeHtml = (s) => s
   .replace(/</g, '&lt;')
   .replace(/>/g, '&gt;');
 
-/** Skills block lines in the same markup as the neighboring lines of the base. */
-function renderSkills(skills) {
+const withWeight = (spanOpen, weight) => (spanOpen.includes('style="')
+  ? spanOpen.replace('style="', `style="font-weight:${weight};`)
+  : spanOpen.replace(/>$/, ` style="font-weight:${weight}">`));
+
+/** Skills block lines in the markup of the placeholder's own paragraph and text run. */
+function renderSkills(skills, { pOpen, spanOpen }) {
   return skills
-    .map(({ category, items }) => `<p class="${LINE}"><span class="${BOLD}">${escapeHtml(category)}</span>`
-      + `<span class="${PLAIN}">: ${escapeHtml(items)}</span></p>`)
+    .map(({ category, items }) => `${pOpen}${withWeight(spanOpen, 700)}${escapeHtml(category)}</span>`
+      + `${withWeight(spanOpen, 400)}: ${escapeHtml(items)}</span></p>`)
     .join('');
+}
+
+function placeholderMarkup(html, paragraph, at) {
+  const pOpen = html.slice(paragraph.start, html.indexOf('>', paragraph.start) + 1);
+  const spanStart = html.lastIndexOf('<span', at);
+  const spanOpen = spanStart > paragraph.start ? html.slice(spanStart, html.indexOf('>', spanStart) + 1) : '<span>';
+  return { pOpen, spanOpen };
 }
 
 /** The paragraph the placeholder sits in (to replace the whole line, not just its text). */
@@ -140,7 +144,8 @@ function fill(base, blocks) {
   if (at === -1) throw new Error(`the base has no placeholder ${PLACEHOLDERS.skills}`);
   const paragraph = paragraphAround(html, at);
   if (!paragraph) throw new Error(`placeholder ${PLACEHOLDERS.skills} is not inside a <p>`);
-  html = html.slice(0, paragraph.start) + renderSkills(blocks.skills) + html.slice(paragraph.end);
+  const markup = placeholderMarkup(html, paragraph, at);
+  html = html.slice(0, paragraph.start) + renderSkills(blocks.skills, markup) + html.slice(paragraph.end);
 
   const left = html.match(/\[[^\]]*placeholder[^\]]*\]/gi);
   if (left) throw new Error(`placeholders left in the result: ${[...new Set(left)].join(', ')}`);
