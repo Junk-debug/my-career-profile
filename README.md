@@ -20,6 +20,7 @@ Next to them, `skills-rating/` is a small local app for rating the skills in `sk
 .claude/skills/        the four skills above
 skills-rating/         the rating app (Vite + React)
 templates/data-repo/   skeleton of the private data repo
+tests/                 unit tests of the skill scripts (node:test, no dependencies)
 skills.csv             ┐
 CV_Base.html           │ git-ignored symlinks into the private data repo
 resume-config.json     │
@@ -118,6 +119,18 @@ No dependencies: the script drives headless Chromium over the DevTools protocol 
 built-in `WebSocket`. It finds a browser by itself — the Playwright/Puppeteer cache, then Chrome,
 Chromium, Edge, Brave, Arc. After printing it counts the pages in the finished PDF and fails if
 there is more than one.
+
+## Tests
+
+```bash
+npm test   # node --test tests/*.test.mjs
+```
+
+Unit tests of the skill scripts on Node's built-in test runner — nothing to install, like the scripts
+themselves. They use made-up people only, never the data repo. `tests/render.test.mjs` covers
+`render.mjs`: parsing the blocks, finding the placeholders (any letter case, split by formatting,
+missing), the skills line as a paragraph or a list item and the cases it refuses, escaping, the
+structure check, and that nothing outside the skills line changes.
 
 ## Skills rating app
 

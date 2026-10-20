@@ -12,7 +12,7 @@
  * Flags: --base=<path to the base html>, --force (overwrite an existing file)
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, relative } from 'node:path';
 
@@ -22,7 +22,7 @@ const DEFAULT_BASE = resolve(ROOT, 'CV_Base.html');
 const DEFAULT_OUT_DIR = resolve(ROOT, 'out');
 
 /** Placeholders of the base resume. Key — block section, value — the bracketed text. */
-const PLACEHOLDERS = {
+export const PLACEHOLDERS = {
   title: '[Position placeholder]',
   summary: '[Summary placeholder]',
   skills: '[skills placeholder]',
@@ -48,7 +48,7 @@ const stripMd = (s) => s.replace(/[*_`]/g, '').trim();
  * Anything after the skills block that does not look like a "Category: items" line
  * is treated as the agent's commentary and ignored.
  */
-function parseBlocks(text) {
+export function parseBlocks(text) {
   const found = { title: [], summary: [], skills: [] };
   let current = null;
 
@@ -88,7 +88,7 @@ function parseBlocks(text) {
   };
 }
 
-function validate(blocks) {
+export function validate(blocks) {
   const problems = [];
   if (!blocks.title) problems.push('no Title section');
   if (!blocks.summary) problems.push('no Summary section');
@@ -99,7 +99,7 @@ function validate(blocks) {
 
 // ─────────────────────────────────────────── inserting into html
 
-const escapeHtml = (s) => s
+export const escapeHtml = (s) => s
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
   .replace(/>/g, '&gt;');
@@ -108,7 +108,7 @@ const tokenPattern = (token) => new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, 
 const stripTags = (html) => html.replace(/<[^>]*>/g, '');
 const plainText = (html) => stripTags(html).replace(/&nbsp;| /g, ' ').trim();
 
-function locate(html, token) {
+export function locate(html, token) {
   const at = html.search(tokenPattern(token));
   if (at !== -1) return at;
   if (tokenPattern(token).test(stripTags(html))) {
@@ -120,7 +120,7 @@ function locate(html, token) {
 const LINE_TAGS = ['p', 'li'];
 const STRUCTURE_TAGS = /<\/?(p|li|ul|ol|table|tbody|thead|tr|td|th|div|h[1-6])\b/i;
 
-function skillsLine(html, at, token) {
+export function skillsLine(html, at, token) {
   const opening = [...html.slice(0, at).matchAll(/<(p|li)(?:\s[^>]*)?>/gi)].at(-1);
   const misplaced = new Error(`${token} must sit alone on its own line — a plain paragraph or a list item, not inside a table and not next to other text`);
   if (!opening) throw misplaced;
@@ -136,14 +136,14 @@ function skillsLine(html, at, token) {
   return { start, end, line };
 }
 
-function renderSkills(skills, line, token) {
+export function renderSkills(skills, line, token) {
   return skills
     .map(({ category, items }) => line.replace(tokenPattern(token), () => `<span style="font-weight:700">${escapeHtml(category)}</span>`
       + `<span style="font-weight:400">: ${escapeHtml(items)}</span>`))
     .join('');
 }
 
-function countTags(html) {
+export function countTags(html) {
   const counts = new Map();
   for (const [, slash, name] of html.matchAll(/<(\/?)([a-z][a-z0-9]*)\b[^>]*>/gi)) {
     const key = `${slash ? '/' : ''}${name.toLowerCase()}`;
@@ -152,7 +152,7 @@ function countTags(html) {
   return counts;
 }
 
-function checkStructure(before, line, after, lines) {
+export function checkStructure(before, line, after, lines) {
   const base = countTags(before);
   const copy = countTags(line);
   const result = countTags(after);
@@ -169,7 +169,7 @@ function checkStructure(before, line, after, lines) {
   if (problems.length) throw new Error(`the assembled resume does not match the base's structure, nothing was written: ${problems.join('; ')}`);
 }
 
-function fill(base, blocks) {
+export function fill(base, blocks) {
   let html = base;
 
   for (const key of ['title', 'summary']) {
@@ -191,7 +191,7 @@ function fill(base, blocks) {
 
 // ─────────────────────────────────────────── file name
 
-const slug = (s) => s
+export const slug = (s) => s
   .normalize('NFKD')
   .replace(/[^\w\s-]/g, '')
   .trim()
@@ -206,16 +206,16 @@ const slug = (s) => s
 const CONFIG_PATH = resolve(ROOT, 'resume-config.json');
 const DEFAULT_CV_NAME = 'CV';
 
-function readCvName() {
-  if (!existsSync(CONFIG_PATH)) return DEFAULT_CV_NAME;
-  const { resumeFileName } = JSON.parse(readFileSync(CONFIG_PATH, 'utf8'));
+export function readCvName(configPath = CONFIG_PATH) {
+  if (!existsSync(configPath)) return DEFAULT_CV_NAME;
+  const { resumeFileName } = JSON.parse(readFileSync(configPath, 'utf8'));
   return resumeFileName ? resumeFileName.replace(/\.pdf$/i, '') : DEFAULT_CV_NAME;
 }
 
 const CV_NAME = readCvName();
 
 /** out/<Company>-<Position>/<resumeFileName>.html — the vacancy goes in the folder, not the file name. */
-function outputPath(blocks, flags) {
+export function outputPath(blocks, flags) {
   if (flags.has('out')) {
     const value = flags.get('out');
     return value === '-' ? '-' : resolve(process.cwd(), value);
@@ -293,4 +293,7 @@ function main(argv) {
   console.log(`  Skills:  ${blocks.skills.length} lines, ${blocks.skills.reduce((n, s) => n + s.items.split(',').length, 0)} items`);
 }
 
-main(process.argv);
+const invokedDirectly = process.argv[1] !== undefined && existsSync(process.argv[1])
+  && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (invokedDirectly) main(process.argv);
