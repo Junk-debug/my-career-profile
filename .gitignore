@@ -12,6 +12,7 @@ dist/
 /*.pdf
 /out
 /.data-dir
+/.claude/settings.local.json
 
 # generated resumes
 out/

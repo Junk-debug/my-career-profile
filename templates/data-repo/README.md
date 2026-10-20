@@ -36,7 +36,24 @@ ln -s ../my-career-profile-data/out out
 ```
 
 Open Claude Code in the workspace folder, not in the code repository: the agent then sees both
-repositories and does not ask for permission on every read or write through a symlink.
+repositories and does not ask for permission on every read or write through a symlink. The files
+behind the symlinks live outside the code repository, so a session opened inside it needs explicit
+access — without it a non-interactive run cannot read `CV_Base.html` and leaves the years of
+experience out of the Summary. If you do open the code repository itself, grant access once:
+
+- Claude Code — add the data repository to `permissions.additionalDirectories` in the code
+  repository's `.claude/settings.local.json` (git-ignored; create it if absent), or run
+  `/add-dir ../my-career-profile-data` in the session:
+
+```json
+{
+  "permissions": {
+    "additionalDirectories": ["../my-career-profile-data"]
+  }
+}
+```
+
+- Codex — add the data repository as a writable root in `.codex/config.toml`'s sandbox settings.
 
 ## Rules
 
